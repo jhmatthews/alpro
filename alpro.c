@@ -38,9 +38,10 @@ static PyObject* get_P(PyObject* self, PyObject* args)
   double mass, energy, M, B, omega_pl;
   double EVarray[3];
   double Deltas[NDELTAS];
-  double alpha, distance, phi, logenergy, g_axion;
+  double alpha, distance, phi, logenergy, g_axion, L;
   int ienergy, i;
 
+  /* Variables for calling from Python */
   PyArrayObject *in_array;
   PyObject      *out_array;
   NpyIter *in_iter;
@@ -49,8 +50,10 @@ static PyObject* get_P(PyObject* self, PyObject* args)
   NpyIter_IterNextFunc *out_iternext;
 
   /*  parse single numpy array argument */
-  if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, &in_array))
+  if (!PyArg_ParseTuple(args, "O!ddd", &PyArray_Type, &in_array, &phi, &B, &L))
       return NULL;
+
+  B *= UNIT_GAUSS;
 
   /*  construct the output array, like the input array */
   out_array = PyArray_NewLikeArray(in_array, NPY_ANYORDER, NULL, 0);
@@ -93,11 +96,9 @@ static PyObject* get_P(PyObject* self, PyObject* args)
     omega_pl = sqrt (4.0 * const_PI * const_ECHARGE * const_ECHARGE * 1e-2 / const_MELEC) * const_HEV;
     // logenergy = (3 + ((double) ienergy * dlogenergy));
     energy = **in_dataptr;
-    B = 1e-5 * UNIT_GAUSS;
-    phi = 0.0;
 
     /* 1.0 kpc */
-    distance = 1.0 * 1000.0 * const_PC * UNIT_LENGTH;
+    distance = L * 1000.0 * const_PC * UNIT_LENGTH;
 
     A = gsl_vector_complex_view_array (A_data, 3);
     U0 = gsl_matrix_complex_alloc (3, 3);
@@ -118,7 +119,7 @@ static PyObject* get_P(PyObject* self, PyObject* args)
     get_U0 (U0, EVarray, &T1.matrix, &T2.matrix, &T3.matrix, distance);
 
     /* apply the rotation matrix */
-    // apply_rotation_matrix (phi, U0);
+    apply_rotation_matrix (phi, U0);
 
     /* multiply the state vector (A) by the transfer matrix (U0) 
        results is stored in A_new */
@@ -127,17 +128,17 @@ static PyObject* get_P(PyObject* self, PyObject* args)
     gsl_blas_zgemv (CblasNoTrans, GSL_COMPLEX_ONE, U0, &A.vector, GSL_COMPLEX_ZERO, A_new);
 
 
-    printf ("Vectors: %8.4e ", energy);
+    // printf ("Vectors: %8.4e ", energy);
     for (i = 0; i < 3; i++)
     {
       gsl_complex x = gsl_vector_complex_get (A_new, i);
       double abs2 = gsl_complex_abs2 (x);
-      printf ("%8.4e ", abs2);
+      // printf ("%8.4e ", abs2);
 
       if (i == 2) **out_dataptr = abs2;
       // printf()
     }
-    printf ("\n");
+    // printf ("\n");
 
     gsl_vector_complex_free (A_new);
     gsl_matrix_complex_free (U0);
