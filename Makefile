@@ -42,4 +42,6 @@ all: clean alpro
 clean :
 	rm -f *.o  *~
 
+# lslt /Library/Frameworks/Python.framework/Versions/3.7/include/python3.7m/
+# gcc -fPIC -shared -I/Users/matthews/winds/python/include -I/Library/Frameworks/Python.framework/Versions/3.7/include/python3.7m/ -L/Users/matthews/winds/python/lib -lm -lgsl -lgslcblas -lpython3.7 -o alpro.so alpro.c
 

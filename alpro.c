@@ -27,9 +27,9 @@
 #define OSC 3
 #define NDELTAS 4
 
-int
-main (int argc, char const *argv[])
+static PyObject* get_P(PyObject* self, PyObject* args)
 {
+
   gsl_matrix_complex_view U0_matrix, T1, T2, T3;
   gsl_vector_complex_view A;
   gsl_vector_complex *A_new;
@@ -41,26 +41,63 @@ main (int argc, char const *argv[])
   double alpha, distance, phi, logenergy, g_axion;
   int ienergy, i;
 
-  double dlogenergy = 0.001;
+  PyArrayObject *in_array;
+  PyObject      *out_array;
+  NpyIter *in_iter;
+  NpyIter *out_iter;
+  NpyIter_IterNextFunc *in_iternext;
+  NpyIter_IterNextFunc *out_iternext;
 
-  for (ienergy = 0; ienergy < 1000; ienergy++)
-  {
+  /*  parse single numpy array argument */
+  if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, &in_array))
+      return NULL;
+
+  /*  construct the output array, like the input array */
+  out_array = PyArray_NewLikeArray(in_array, NPY_ANYORDER, NULL, 0);
+  if (out_array == NULL)
+      return NULL;
+
+  /*  create the iterators */
+  in_iter = NpyIter_New(in_array, NPY_ITER_READONLY, NPY_KEEPORDER,
+                           NPY_NO_CASTING, NULL);
+  if (in_iter == NULL)
+      goto fail;
+
+  out_iter = NpyIter_New((PyArrayObject *)out_array, NPY_ITER_READWRITE,
+                        NPY_KEEPORDER, NPY_NO_CASTING, NULL);
+  if (out_iter == NULL) {
+      NpyIter_Deallocate(in_iter);
+      goto fail;
+  }
+
+  in_iternext = NpyIter_GetIterNext(in_iter, NULL);
+  out_iternext = NpyIter_GetIterNext(out_iter, NULL);
+  if (in_iternext == NULL || out_iternext == NULL) {
+      NpyIter_Deallocate(in_iter);
+      NpyIter_Deallocate(out_iter);
+      goto fail;
+  }
+  double ** in_dataptr = (double **) NpyIter_GetDataPtrArray(in_iter);
+  double ** out_dataptr = (double **) NpyIter_GetDataPtrArray(out_iter);
+
+  /*  iterate over the arrays */
+  do {
     double A_data[] = { 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 };
 
     /* mass and coupling constant */
     mass = 1e-12;
     g_axion = 1e-12 * 1e-9;
-    M= 1.0 / (1e-12) * 1e9;
+    M = 1.0 / (1e-12) * 1e9;
 
     /* set plasma frequency for n = 1e-2 */
     omega_pl = sqrt (4.0 * const_PI * const_ECHARGE * const_ECHARGE * 1e-2 / const_MELEC) * const_HEV;
-    logenergy = (3 + ((double) ienergy * dlogenergy));
-    energy = pow(10, logenergy);
+    // logenergy = (3 + ((double) ienergy * dlogenergy));
+    energy = **in_dataptr;
     B = 1e-5 * UNIT_GAUSS;
     phi = 0.0;
 
     /* 1.0 kpc */
-    distance = 1.0 * 1000.0 * const_PC * UNIT_LENGTH;       
+    distance = 1.0 * 1000.0 * const_PC * UNIT_LENGTH;
 
     A = gsl_vector_complex_view_array (A_data, 3);
     U0 = gsl_matrix_complex_alloc (3, 3);
@@ -94,8 +131,10 @@ main (int argc, char const *argv[])
     for (i = 0; i < 3; i++)
     {
       gsl_complex x = gsl_vector_complex_get (A_new, i);
-      double abs2 = gsl_complex_abs2(x);
+      double abs2 = gsl_complex_abs2 (x);
       printf ("%8.4e ", abs2);
+
+      if (i == 2) **out_dataptr = abs2;
       // printf()
     }
     printf ("\n");
@@ -103,9 +142,61 @@ main (int argc, char const *argv[])
     gsl_vector_complex_free (A_new);
     gsl_matrix_complex_free (U0);
   }
-  return 0;
+  while (in_iternext (in_iter) && out_iternext (out_iter));
+
+  /*  clean up and return the result */
+  NpyIter_Deallocate(in_iter);
+  NpyIter_Deallocate(out_iter);
+  Py_INCREF(out_array);
+  return out_array;
+
+  /*  in case bad things happen */
+  fail:
+    Py_XDECREF(out_array);
+    return NULL;
 }
 
+/*  define functions in module */
+static PyMethodDef AlproMethods[] =
+{
+     {"get_P", get_P, METH_VARARGS,
+         "evaluate the photon to axion probability"},
+     {NULL, NULL, 0, NULL}
+};
+
+
+#if PY_MAJOR_VERSION >= 3
+/* module initialization */
+/* Python version 3*/
+static struct PyModuleDef cModPyDem = {
+    PyModuleDef_HEAD_INIT,
+    "alpro_module", "Some documentation",
+    -1,
+    AlproMethods
+};
+PyMODINIT_FUNC PyInit_alpro(void) {
+    PyObject *module;
+    module = PyModule_Create(&cModPyDem);
+    if(module==NULL) return NULL;
+    /* IMPORTANT: this must be called */
+    import_array();
+    if (PyErr_Occurred()) return NULL;
+    return module;
+}
+
+#else
+/* module initialization */
+/* Python version 2 */
+PyMODINIT_FUNC initalpro(void) {
+    PyObject *module;
+    module = Py_InitModule("alpro", AlproMethods);
+    if(module==NULL) return;
+    /* IMPORTANT: this must be called */
+    import_array();
+    return;
+}
+
+#endif
 
 void
 get_U0 (gsl_matrix_complex * U0_new, double EVarray[3],
@@ -200,7 +291,8 @@ get_T_matrices (double alpha, gsl_matrix_complex_view * T1, gsl_matrix_complex_v
 }
 
 void
-get_T_matrices2 (double EVarray[3], double Deltas[4], gsl_matrix_complex_view * T1, gsl_matrix_complex_view * T2, gsl_matrix_complex_view * T3)
+get_T_matrices2 (double EVarray[3], double Deltas[4], gsl_matrix_complex_view * T1, gsl_matrix_complex_view * T2,
+                 gsl_matrix_complex_view * T3)
 {
   int i, j;
   int nrows = 3;
@@ -226,11 +318,11 @@ get_T_matrices2 (double EVarray[3], double Deltas[4], gsl_matrix_complex_view * 
 
   /* second and third matrixes, eqs 36 and 37 */
   T2_temp[1][1] = T3_temp[2][2] = (EVarray[2] - t) / (EVarray[2] - EVarray[1]);
-  T2_temp[2][1] = (EVarray[2]-t)*(EVarray[1]-t) / v / (EVarray[2] - EVarray[1]);
-  T2_temp[1][2] = - v / (EVarray[2] - EVarray[1]);
-  T2_temp[2][2] = T3_temp[1][1] = - (EVarray[1]-t) / (EVarray[2] - EVarray[1]);
-  T3_temp[2][1] = - T2_temp[2][1];
-  T3_temp[1][2] = - T2_temp[1][2];
+  T2_temp[2][1] = (EVarray[2] - t) * (EVarray[1] - t) / v / (EVarray[2] - EVarray[1]);
+  T2_temp[1][2] = -v / (EVarray[2] - EVarray[1]);
+  T2_temp[2][2] = T3_temp[1][1] = -(EVarray[1] - t) / (EVarray[2] - EVarray[1]);
+  T3_temp[2][1] = -T2_temp[2][1];
+  T3_temp[1][2] = -T2_temp[1][2];
 
 
   /* zero the matrixes */
