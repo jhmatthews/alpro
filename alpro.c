@@ -38,7 +38,7 @@ static PyObject* get_P(PyObject* self, PyObject* args)
   double mass, energy, M, B, omega_pl;
   double EVarray[3];
   double Deltas[NDELTAS];
-  double alpha, distance, phi, logenergy, g_axion, L;
+  double alpha, distance, phi, logenergy, g_a, L;
   int ienergy, i;
 
   /* Variables for calling from Python */
@@ -50,7 +50,7 @@ static PyObject* get_P(PyObject* self, PyObject* args)
   NpyIter_IterNextFunc *out_iternext;
 
   /*  parse single numpy array argument */
-  if (!PyArg_ParseTuple(args, "O!ddd", &PyArray_Type, &in_array, &phi, &B, &L))
+  if (!PyArg_ParseTuple(args, "O!ddddd", &PyArray_Type, &in_array, &phi, &B, &L, &g_a, &mass))
       return NULL;
 
   B *= UNIT_GAUSS;
@@ -88,9 +88,7 @@ static PyObject* get_P(PyObject* self, PyObject* args)
     double A_data[] = { 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 };
 
     /* mass and coupling constant */
-    mass = 1e-12;
-    g_axion = 1e-12 * 1e-9;
-    M = 1.0 / (1e-12) * 1e9;
+    M = 1.0 / g_a;
 
     /* set plasma frequency for n = 1e-2 */
     omega_pl = sqrt (4.0 * const_PI * const_ECHARGE * const_ECHARGE * 1e-2 / const_MELEC) * const_HEV;
