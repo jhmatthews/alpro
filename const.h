@@ -2,9 +2,10 @@
 #define TRUE		1
 #define FALSE		0
 #define const_H   			6.6262e-27
-#define const_HC  				  1.98587e-16
-#define const_HEV				    4.13620e-15 /* Planck's constant in eV */
-#define const_HRYD				  3.04005e-16   /* NSH 1204 Planck's constant in Rydberg */
+#define const_HC  			1.98587e-16
+#define const_HEV			4.135667696e-15 /* Planck's constant in eV */
+#define const_HBAR_EV		6.582119569e-16
+#define const_HRYD			3.04005e-16   /* NSH 1204 Planck's constant in Rydberg */
 #define const_C  			2.997925e10
 #define const_G				  	6.670e-8
 #define const_BOLTZMANN 		1.38062e-16

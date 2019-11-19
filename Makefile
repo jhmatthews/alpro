@@ -27,7 +27,7 @@ startup:
 	@echo 'YOU ARE COMPILING FOR' $(PRINT_VAR)	# tells user if compiling for optimized or debug
 
 prototypes:
-	cproto -I$(INCLUDE) $(alpro_source) > prototypes.h
+	cproto $(alpro_source) > prototypes.h
 
 alpro_objects = alpro.o
 alpro_source = alpro.c
