@@ -13,13 +13,13 @@ get_P (PyObject * self, PyObject * args)
 {
   double mass, energy, M, B, omega_pl;
   double alpha, distance, phi, logenergy, g_a, L, ne;
-  double *A_out, *A_init;
+  double *A_out, *A_init, *phis;
   double *A_temp;
   int i;
   gsl_vector_complex *A_new;
 
   /* Variables for calling from Python */
-  PyArrayObject *in_array, *A_array;
+  PyArrayObject *in_array, *A_array, *phi_in;
   PyObject *out_array, *Aout_array;
   NpyIter *in_iter;
   NpyIter *out_iter;
@@ -29,8 +29,8 @@ get_P (PyObject * self, PyObject * args)
 
   /*  parse single numpy array argument with a series of double variables after it */
   if (!PyArg_ParseTuple
-      (args, "O!O!dddddd", &PyArray_Type, &in_array, &PyArray_Type, &A_array,
-       &phi, &B, &L, &g_a, &mass, &ne))
+      (args, "O!O!O!ddddd", &PyArray_Type, &in_array, &PyArray_Type, &A_array,
+       &PyArray_Type, &phi_in, &B, &L, &g_a, &mass, &ne))
     return NULL;
 
   /* B should be given in Gauss, so convert to natural units */
@@ -88,6 +88,7 @@ get_P (PyObject * self, PyObject * args)
   A_new = gsl_vector_complex_alloc (3);
   A_init = pyvector_to_Carrayptrs (A_array);
   A_out = pyvector_to_Carrayptrs (Aout_array);
+  phis = pyvector_to_Carrayptrs (phi_in);
   int ienergy = 0;
 
   // for (i = 0; i < 6; i++)
@@ -99,12 +100,12 @@ get_P (PyObject * self, PyObject * args)
       for (i = 0; i < 6; i++)
       {
 	      A_temp[i] = A_init[(ienergy * 6) + i];
-        printf ("%8.4e %d\n", A_temp[i], (ienergy * 6) + i);
       }
-      printf("\n");
 
       /* get energy from array */
       energy = **in_dataptr;
+
+      phi = phis[ienergy];
 
       /* do the propagation through one domain */
       PropagateOne (A_new, mass, energy, M, B, omega_pl, phi, distance,
@@ -115,18 +116,16 @@ get_P (PyObject * self, PyObject * args)
       for (i = 0; i < 3; i++)
 	{
 	  gsl_complex x = gsl_vector_complex_get (A_new, i);
-	  A_out[(ienergy * 6) + i] = x.dat[0];
-	  A_out[(ienergy * 6) + 3 + i] = x.dat[1];
+	  A_out[(ienergy * 6)  + (2*i)] = x.dat[0];
+	  A_out[(ienergy * 6) + 1 + (2*i)] = x.dat[1];
+    // A_out[(ienergy * 6) + (2*i)] = gsl_complex_abs(x);
+    // A_out[(ienergy * 6) + 1 + (2*i)] = 0.0;
 
 	  double abs2 = gsl_complex_abs2 (x);
 
 	  if (i == 2)
 	    **out_dataptr = abs2;
 	}
-      for (i = 0; i < 6; i++)
-      {
-        printf ("JM: %8.4e %8.4e\n", A_out[(ienergy * 6) + i], **out_dataptr);
-      }
       ienergy++;
     }
   while (in_iternext (in_iter) && out_iternext (out_iter));
@@ -182,7 +181,7 @@ PropagateOne (gsl_vector_complex * A_new, double mass, double energy,
   /* multiply the state vector (A) by the transfer matrix (U0) 
      result is stored in A_new */
   exp_term = gsl_complex_polar (1.0, energy * distance);
-  gsl_matrix_complex_scale (U0, exp_term);
+  // gsl_matrix_complex_scale (U0, exp_term);
 
   gsl_blas_zgemv (CblasNoTrans, GSL_COMPLEX_ONE, U0, &A.vector,
 		  GSL_COMPLEX_ZERO, A_new);
