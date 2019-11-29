@@ -30,7 +30,7 @@ direction = 2
 
 # Ainit[:,0] = 1.0
 Ainit[:,direction] = 1.0
-phi = np.ones_like(energy2) * np.pi/2
+phi = np.ones_like(energy2) * np.pi/2 * 0.0
 P, Anew = alpro.get_P(energy2, Ainit, phi, B / UNIT_GAUSS, L, g, mass, ne)
 
 plt.plot(energy2, P, c="C0", lw=3, label="Code")
@@ -50,10 +50,11 @@ for i in range(Nshells):
 	Ainit = Anew
 	
 	P2, Anew = alpro.get_P(energy2, Ainit, phi, B / UNIT_GAUSS, L/Nshells, g, mass, ne)
+	print (Anew)
 	# phi = np.pi/2.0 * np.random.random(len(phi))
 	# PP *= (1.0 - P2)
 
-plt.plot(energy2, P2, lw=3, label="Code Discretised", c="C2", ls="--")
+plt.plot(energy2, 1-P2, lw=3, label="Code Discretised", c="C2", ls="--")
 # plt.plot(energy2, Anew[:,4]**2, lw=3, label="Code Discretised", c="C3", ls=":")
 print (Anew)
 

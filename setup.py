@@ -5,6 +5,7 @@ libraries = ['m', 'gsl', 'gslcblas']
 
 # this should be a symbolic link 
 library_dirs = ['gsl_lib']
+include_dir = 'gsl_include'
 
 # define the extension module
 alpro_module = Extension('alpro',

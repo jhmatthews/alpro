@@ -118,6 +118,7 @@ get_P (PyObject * self, PyObject * args)
 	  gsl_complex x = gsl_vector_complex_get (A_new, i);
 	  A_out[(ienergy * 6)  + (2*i)] = x.dat[0];
 	  A_out[(ienergy * 6) + 1 + (2*i)] = x.dat[1];
+    // printf("%d %d\n", ienergy*6 + (2*i), (ienergy * 6) + 1 + (2*i));
     // A_out[(ienergy * 6) + (2*i)] = gsl_complex_abs(x);
     // A_out[(ienergy * 6) + 1 + (2*i)] = 0.0;
 
@@ -135,11 +136,13 @@ get_P (PyObject * self, PyObject * args)
   NpyIter_Deallocate (in_iter);
   NpyIter_Deallocate (out_iter);
   Py_INCREF (out_array);
+  Py_INCREF (Aout_array);
   return Py_BuildValue("OO", out_array, Aout_array);
 
   /*  in case bad things happen */
 fail:
   Py_XDECREF (out_array);
+  Py_XDECREF (Aout_array);
   return NULL;
 }
 
@@ -181,7 +184,7 @@ PropagateOne (gsl_vector_complex * A_new, double mass, double energy,
   /* multiply the state vector (A) by the transfer matrix (U0) 
      result is stored in A_new */
   exp_term = gsl_complex_polar (1.0, energy * distance);
-  // gsl_matrix_complex_scale (U0, exp_term);
+  gsl_matrix_complex_scale (U0, exp_term);
 
   gsl_blas_zgemv (CblasNoTrans, GSL_COMPLEX_ONE, U0, &A.vector,
 		  GSL_COMPLEX_ZERO, A_new);

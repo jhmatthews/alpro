@@ -14,11 +14,12 @@ def get_density(r):
 	x2 = 4.05e-3 / ((1.0 + (r/280.0))**0.87)
 	return (x1 + x2)
 
-def get_B(r, ne):
+def get_B(r):
 	x = r/(93.0)
 	Bx = (0.00312443*(x**18)) - (0.0319991*(x**16)) + (0.260311*(x**14)) - (1.63197*(x**12)) + (7.58002*(x**10)) - (24.721*(x**8)) + (52.3929*(x**6)) - (63.8794*(x**4)) + (35.8973*(x**2)) - 5.86899	
 	By = (0.0102459*(x**17))-(0.0937683*(x**15)) + (0.671841*(x**13)) - (3.6406*(x**11)) + (14.2479*(x**9)) - (37.7455*(x**7)) + (61.3611*(x**5)) - (51.7231*(x**3)) + (16.9128*x)
 	return Bx, By
+
 
 def generate_field_arrays(domain_size, distribution):
 	x = []
@@ -43,7 +44,7 @@ np.random.seed(12)
 ### Physical Parameters
 mass = 10.0**(-12.7)
 M = 1.0 / (1e-12) * 1e9
-g = 1e-12 * 1e-9
+g = 1e-11 * 1e-9
 ne = 1e-40
 omega_pl = np.sqrt(4.0 * PI * E * E * ne / MELEC) * HBAR_EV
 omega_pl = 1e-100
@@ -67,40 +68,61 @@ Ainit[:,direction] = 1.0
 r = 0.0
 
 Lmax = 93.0
+Anew = Ainit
+theta = np.zeros_like(energy2)
 
-while r < Lmax:
+L  = 0.1
+r = -L / 2.0
+myL = 0.0
+EPSILON = 1e-10
+
+while myL < (Lmax-EPSILON):
 # Bx, By, ne, r, x = generate_field_arrays(Lmax, distribution)	
 
 # for i in range(len(Bx)):
 	# random length 
-	L = 0.1 
+	myL += L 
+	r += L 
 	# L = x[i]
 
-	r += L / 2.0
-	ne = get_density(r)
-	Bx,By = get_B(r, ne)
+	# ne = get_density(r)
+	Bx,By = get_B(r)
 	B = np.sqrt(Bx**2 + By**2)
 	# phi = np.arctan(By/Bx)
 	# B = np.sqrt(Bx**2 + By**2)
-	phi = np.arctan(By/Bx) * np.ones_like(energy2)
+	# theta = np.arctan(Ainit[:,1]/Ainit[:,2])
+	phi = (np.arctan(Bx/By) * np.ones_like(energy2)) 
 	
 
 
 	omega_pl = 1e-100
 	#phi = np.random.random(size=len(energy2)) * np.pi/2.0
-
-	P, Anew = alpro.get_P(energy2, Ainit, phi, B*1e-6, L, 1e-11, 1e-9, 1e-100)
+	print (Anew[0])
+	P, Anew = alpro.get_P(energy2, Ainit, phi, B*1e-6, L, 1e-11 * 1e-9, 1e-9, 0.0)
 	Ainit = Anew
+	#theta = -np.arctan(Anew[:,0]/Anew[:,2])
 
 
-plt.plot(energy2, 1-P, lw=3, label="Code Discretised", c="C0", ls="-")
+
+
+print (myL)
+plt.plot(energy2/1e9, 1-P, lw=3, label="Code Discretised", c="C1", ls="-")
 # plt.plot(energy2, Anew[:,4]**2, lw=3, label="Code Discretised", c="C3", ls=":")
-print (Anew)
-plt.ylim(0.75,1.0)
+#print (Anew)
+x,y = np.loadtxt("marsh_data.txt", unpack=True)
+plt.plot(x,y)
+#plt.ylim(0.75,1.0)
+plt.xlim(0.1,100)
 plt.legend()
 plt.ylabel(r"$P_{\gamma -> a}$")
 plt.semilogx()
 plt.xlabel("Energy (eV)")
 # plt.semilogy()
 plt.savefig("domain_test.png", dpi=100)
+
+plt.clf()
+x = np.arange(0,93,0.1)
+plt.plot(x, get_B(x)[0])
+plt.plot(x, get_B(x)[1])
+plt.show()
 # 

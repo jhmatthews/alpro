@@ -85,7 +85,7 @@ get_T_matrices (double alpha, gsl_matrix_complex_view * T1,
   T3_temp[2][1] = T3_temp[1][2] = sin (alpha) * cos (alpha);
   T2_temp[2][2] = T3_temp[1][1] = cos (alpha) * cos (alpha);
 
-  /* zero the matrixes */
+  /* populate the matrixes */
   for (i = 0; i < nrows; i++)
     {
       for (j = 0; j < nrows; j++)
@@ -188,8 +188,8 @@ apply_rotation_matrix (double phi, gsl_matrix_complex * U0)
 
   /* populate elements of rotation matrix */
   v[0][0] = cos (phi);
-  v[0][1] = sin (phi);
-  v[1][0] = -sin (phi);
+  v[0][1] = -sin (phi);
+  v[1][0] = sin (phi);
   v[1][1] = cos (phi);
   v[2][2] = 1.0;
 
