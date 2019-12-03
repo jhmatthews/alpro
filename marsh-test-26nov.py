@@ -60,18 +60,34 @@ distribution = powerlaw.Power_Law(xmin=3.5,xmax=10.0,parameters=[1.2])
 
 # get Ainit 
 Ainit = np.zeros( (len(energy2),6))
+Ainit2 = np.zeros( (len(energy2),6))
 # orientated in the y direction 
 direction = 2
 
 # Ainit[:,0] = 1.0
 Ainit[:,direction] = 1.0
+Ainit2[:,0] = 1.0
 r = 0.0
 
 Lmax = 93.0
 Anew = Ainit
 theta = np.zeros_like(energy2)
 
-L  = 0.1
+L  = 1
+r = -L / 2.0
+myL = 0.0
+EPSILON = 1e-10
+
+
+
+Probabilities = []
+
+Ainit = np.zeros( (len(energy2),6))
+Ainit2 = np.zeros((len(energy2),6))
+energys = energy2
+Ainit[:,direction] = 1.0
+Ainit2[:,0] = 1.0
+L  = 1
 r = -L / 2.0
 myL = 0.0
 EPSILON = 1e-10
@@ -84,6 +100,8 @@ while myL < (Lmax-EPSILON):
 	myL += L 
 	r += L 
 	# L = x[i]
+	#Anew = Ainit
+
 
 	# ne = get_density(r)
 	Bx,By = get_B(r)
@@ -91,26 +109,29 @@ while myL < (Lmax-EPSILON):
 	# phi = np.arctan(By/Bx)
 	# B = np.sqrt(Bx**2 + By**2)
 	# theta = np.arctan(Ainit[:,1]/Ainit[:,2])
-	phi = (np.arctan(Bx/By) * np.ones_like(energy2)) 
+	phi = (np.arctan(Bx/By) * np.ones_like(energys)) 
+	phi2 = (np.arctan(Bx/By) * np.ones_like(energys)) 
 	
 
 
 	omega_pl = 1e-100
 	#phi = np.random.random(size=len(energy2)) * np.pi/2.0
-	print (Anew[0])
-	P, Anew = alpro.get_P(energy2, Ainit, phi, B*1e-6, L, 1e-11 * 1e-9, 1e-9, 0.0)
+	#print (Anew[0])
+	P1, Anew = alpro.get_P(energys, Ainit, phi, B*1e-6, L, 1e-11 * 1e-9, 1e-9, 0.0)
+	P2, Anew2 = alpro.get_P(energys, Ainit2, phi2, B*1e-6, L, 1e-11 * 1e-9, 1e-9, 0.0)
 	Ainit = Anew
-	#theta = -np.arctan(Anew[:,0]/Anew[:,2])
+	Ainit2 = Anew2
+	# theta = -np.arctan(Anew[:,0]/Anew[:,2])
 
+P = 0.5 * (P1 + P2)
 
-
-
+# P = 0.5 * (P1 + P2)
 print (myL)
-plt.plot(energy2/1e9, 1-P, lw=3, label="Code Discretised", c="C1", ls="-")
+plt.plot(energy2/1e9, 1-P, lw=3, label="My Code", c="C1", ls="-")
 # plt.plot(energy2, Anew[:,4]**2, lw=3, label="Code Discretised", c="C3", ls=":")
 #print (Anew)
 x,y = np.loadtxt("marsh_data.txt", unpack=True)
-plt.plot(x,y)
+plt.plot(x,y, label="Marsh Data")
 #plt.ylim(0.75,1.0)
 plt.xlim(0.1,100)
 plt.legend()
@@ -121,8 +142,8 @@ plt.xlabel("Energy (eV)")
 plt.savefig("domain_test.png", dpi=100)
 
 plt.clf()
-x = np.arange(0,93,0.1)
-plt.plot(x, get_B(x)[0])
-plt.plot(x, get_B(x)[1])
-plt.show()
+# x = np.arange(0,93,0.1)
+# plt.plot(x, get_B(x)[0])
+# plt.plot(x, get_B(x)[1])
+# plt.show()
 # 

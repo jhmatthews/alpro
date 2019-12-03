@@ -222,8 +222,6 @@ apply_rotation_matrix (double phi, gsl_matrix_complex * U0)
 		  GSL_COMPLEX_ZERO, U0);
 
   /* now we have the required matrix stored in U0_matrix and we can return */
-
-  /* free memory? should I make this more efficient? */
   gsl_matrix_complex_free (C);
   gsl_matrix_complex_free (v_transpose);
 
