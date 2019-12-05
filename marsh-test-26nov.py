@@ -82,63 +82,73 @@ EPSILON = 1e-10
 
 Probabilities = []
 
-Ainit = np.zeros( (len(energy2),6))
-Ainit2 = np.zeros((len(energy2),6))
-energys = energy2
-Ainit[:,direction] = 1.0
-Ainit2[:,0] = 1.0
 L  = 1
 r = -L / 2.0
 myL = 0.0
 EPSILON = 1e-10
 
-while myL < (Lmax-EPSILON):
-# Bx, By, ne, r, x = generate_field_arrays(Lmax, distribution)	
+# g_a = 1e-11
+density = 0.0
+mass = 1e-9
 
-# for i in range(len(Bx)):
-	# random length 
-	myL += L 
-	r += L 
-	# L = x[i]
-	#Anew = Ainit
+g_as = np.logspace(-12,-11,10)
+g_as = [1e-11 / np.sqrt(4.0 * PI)]
+for g_a in g_as:
+	for mass in np.logspace(-9,-8,1):
+		Ainit = np.zeros( (len(energy2),6))
+		Ainit2 = np.zeros((len(energy2),6))
+		energys = energy2
+		Ainit[:,direction] = 1.0
+		Ainit2[:,0] = 1.0
+		myL = 0.0
+		r = -L / 2.0
+		while myL < (Lmax-EPSILON):
+		# Bx, By, ne, r, x = generate_field_arrays(Lmax, distribution)	
+
+		# for i in range(len(Bx)):
+			# random length 
+			myL += L 
+			r += L 
+			# L = x[i]
+			#Anew = Ainit
 
 
-	# ne = get_density(r)
-	Bx,By = get_B(r)
-	B = np.sqrt(Bx**2 + By**2)
-	# phi = np.arctan(By/Bx)
-	# B = np.sqrt(Bx**2 + By**2)
-	# theta = np.arctan(Ainit[:,1]/Ainit[:,2])
-	phi = (np.arctan(Bx/By) * np.ones_like(energys)) 
-	phi2 = (np.arctan(Bx/By) * np.ones_like(energys)) 
-	
+			# ne = get_density(r)
+			Bx,By = get_B(r)
+			B = np.sqrt(Bx**2 + By**2)
 
+			print (B)
+			# phi = np.arctan(By/Bx)
+			# B = np.sqrt(Bx**2 + By**2)
+			# theta = np.arctan(Ainit[:,1]/Ainit[:,2])
+			phi = (np.arctan(Bx/By) * np.ones_like(energys)) 
+			phi2 = (np.arctan(Bx/By) * np.ones_like(energys)) 
+			
+			#phi = np.random.random(size=len(energy2)) * np.pi/2.0
+			#print (Anew[0])
+			P1, Anew = alpro.get_P(energys, Ainit, phi, B*1e-6, L, g_a * 1e-9, mass, 1e-20)
+			P2, Anew2 = alpro.get_P(energys, Ainit2, phi2, B*1e-6, L, g_a * 1e-9, mass, 1e-20)
+			Ainit = Anew
+			Ainit2 = Anew2
+			# theta = -np.arctan(Anew[:,0]/Anew[:,2])
 
-	omega_pl = 1e-100
-	#phi = np.random.random(size=len(energy2)) * np.pi/2.0
-	#print (Anew[0])
-	P1, Anew = alpro.get_P(energys, Ainit, phi, B*1e-6, L, 1e-11 * 1e-9, 1e-9, 0.0)
-	P2, Anew2 = alpro.get_P(energys, Ainit2, phi2, B*1e-6, L, 1e-11 * 1e-9, 1e-9, 0.0)
-	Ainit = Anew
-	Ainit2 = Anew2
-	# theta = -np.arctan(Anew[:,0]/Anew[:,2])
+		P = 0.5 * (P1 + P2)
 
-P = 0.5 * (P1 + P2)
+		# P = 0.5 * (P1 + P2)
+		print (myL)
+		plt.plot(energys/1e9, 1-P, lw=1, label="My Code", ls="-")
 
-# P = 0.5 * (P1 + P2)
-print (myL)
-plt.plot(energy2/1e9, 1-P, lw=3, label="My Code", c="C1", ls="-")
 # plt.plot(energy2, Anew[:,4]**2, lw=3, label="Code Discretised", c="C3", ls=":")
 #print (Anew)
 x,y = np.loadtxt("marsh_data.txt", unpack=True)
-plt.plot(x,y, label="Marsh Data")
+plt.plot(x,y, label="Marsh Data", c="k", lw=3, ls="--")
 #plt.ylim(0.75,1.0)
 plt.xlim(0.1,100)
-plt.legend()
+#plt.legend()
 plt.ylabel(r"$P_{\gamma -> a}$")
 plt.semilogx()
 plt.xlabel("Energy (eV)")
-# plt.semilogy()
+plt.semilogy()
 plt.savefig("domain_test.png", dpi=100)
 
 plt.clf()
