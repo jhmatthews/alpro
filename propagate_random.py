@@ -39,6 +39,9 @@ def generate_field_arrays(domain_size, distribution):
 	return (Bx, By, ne, r, x)
 
 
+Bglobal = np.load("Bfield.npy")[:,0,0,:]
+print (Bglobal.shape)
+
 np.random.seed(12)
 
 ### Physical Parameters
