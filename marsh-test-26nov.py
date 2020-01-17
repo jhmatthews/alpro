@@ -91,7 +91,7 @@ EPSILON = 1e-10
 density = 0.0
 mass = 1e-9
 
-fudge_factor = 1.0
+
 
 g_as = np.logspace(-12,-11,10)
 g_as = [1e-11]
@@ -128,7 +128,7 @@ for g_a in g_as:
 			
 			#phi = np.random.random(size=len(energy2)) * np.pi/2.0
 			#print (Anew[0])
-			B *= 1e-6 / fudge_factor
+			B *= 1e-6 
 			P1, Anew = alpro.get_P(energys, Ainit, phi, B, L, g_a * 1e-9, mass, 1e-20)
 			P2, Anew2 = alpro.get_P(energys, Ainit2, phi2, B, L, g_a * 1e-9, mass, 1e-20)
 			Ainit = Anew
