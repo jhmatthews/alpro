@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-def turbulentCorrelationLength(lMin, lMax, alpha):
+def CorrelationLength(lMin, lMax, alpha):
 	r = lMin / lMax;
-	a = -alpha - 2 
+	a = alpha - 2
+	print (a)
 	return lMax / 2 * (a - 1) / a * (1 - r**a) / (1 - r**(a-1));
 
 
@@ -32,8 +33,8 @@ class MagneticField:
 		kt = np.zeros(3)
 		zeta = (11./3.)+2
 		self.dx = 2.0 * Lbox / self.N
-		kmax = knorm / (25.0)
-		kmin = knorm / (2.0 * Lbox)
+		kmax = knorm / (5.0)
+		kmin = knorm / (Lbox)
 
 
 		#kmin = L / self.N
@@ -41,15 +42,28 @@ class MagneticField:
 
 		kkx, kky, kkz = np.array(np.meshgrid(kx,ky,kz))
 		self.kgrid2 = np.indices(self.shape, dtype=float).T + 1
-		kmag = np.sqrt(kkx*kkx + kky*kky + kkz*kkz)
-		A_k2 = (kmag/kmin)**(-zeta)
-		print (np.min(kmag), np.max(kmag), kmin, kmax, self.dx)
-		A_k2[(kmag < kmin)] = 0.0
-		A_k2[(kmag > kmax)] = 0.0
+		kmag = np.sqrt(kkx**2 + kky**2 + kkz**2)
+
+		# plt.subplot(221)
+		# plt.imshow(np.log10(kkx[:,:,0]))
+		# plt.subplot(222)
+		# plt.imshow(np.log10(kky[:,:,0]))
+		# plt.subplot(223)
+		# plt.imshow(np.log10(kkz[:,:,0]))
+		# plt.subplot(224)
+		# plt.imshow(np.log10(kmag[:,:,0]))
+		# print ("Mean:", np.mean(kkz[:,:,0]))
+		# plt.show()
+
+
+		A_k2 = (kmag)**(-zeta)
+		print (np.min(kmag), np.max(kmag), np.min(kkx), np.max(kkx), kmin, kmax, self.dx)
+		print (np.min(kkz), np.max(kkz), np.min(kky), np.max(kky), kmin, kmax, self.dx)
+		A_k2[(kmag <= kmin)] = 0.0
+		A_k2[(kmag >= kmax)] = 0.0
 		
 		#A_k2 = np.concatenate((A_k2,A_k2,A_k2),axis)
-		lc = turbulentCorrelationLength(knorm/kmax, knorm/kmin, zeta - 2)
-		print (lc)
+		lc = CorrelationLength(knorm/kmax, knorm/kmin, zeta - 2)
 
 		#print (kkx.shape, kky.shape, kkz.shape)
 		#print (A_k2)
@@ -60,6 +74,14 @@ class MagneticField:
 		self.kmag = kmag
 		#self.kgrid = np.concatenate((kkx,kky,kkz))
 		#print (self.kgrid.shape)
+		print ("Magnetic Field Properties")
+		print ("-------------------------")
+		print ("correlation length in kpc:", lc)
+		print ("domain size:", L)
+		print ("grid size:", L/self.N, "k:", knorm/L*self.N)
+		print ("Nyquist limit k:", knorm / L * self.N / 2.0)
+		print ("kmax:", kmax, "kmin:", kmin)
+		print ("lmin:", knorm/kmax, "lmax:", knorm/kmin)
 
 		return (A_k2)
 
@@ -75,9 +97,11 @@ class MagneticField:
 		#Akz = mod_Ak2[:,:,:,2].flatten()
 
 		# calculate random amplitudes according to a rayleigh distribution 
-		amplitudes[:,:,:,0] = (1.0 / 2.0 / np.pi) * np.random.rayleigh(scale=mod_Ak2)
-		amplitudes[:,:,:,1] = (1.0 / 2.0 / np.pi) * np.random.rayleigh(scale=mod_Ak2)
-		amplitudes[:,:,:,2] = (1.0 / 2.0 / np.pi) * np.random.rayleigh(scale=mod_Ak2)
+		norm = (1.0 / 2.0 / np.pi) 
+		#norm = 1.0
+		amplitudes[:,:,:,0] = norm * np.random.rayleigh(scale=mod_Ak2)
+		amplitudes[:,:,:,1] = norm * np.random.rayleigh(scale=mod_Ak2)
+		amplitudes[:,:,:,2] = norm * np.random.rayleigh(scale=mod_Ak2)
 		#amplitudes[:,:,:,1] = np.array([np.random.rayleigh(scale=x) for x in Aky]).reshape(self.shape)
 		#amplitudes[:,:,:,2] = np.array([np.random.rayleigh(scale=x) for x in Akz]).reshape(self.shape)
 
@@ -107,7 +131,7 @@ class MagneticField:
 		B_x = (Az*1j*ky) - (Ay*1j*kz)
 		B_y = -((Az*1j*kx) - (Ax*1j*kz))
 		B_z = (Ay*1j*kx) - (Ax*1j*ky)
-		B = np.concatenate((B_x,B_y,B_z))
+		#self.Btilde = np.concatenate((B_x,B_y,B_z))
 
 		# finally take Inverse fourier transform using scipy fftpack and get real part 
 		B = ifftn(self.Btilde).real
@@ -156,8 +180,8 @@ mod_Ak2 = Bfield.get_Ak2(L)
 
 mod_flat = mod_Ak2.flatten()
 mod_flat[mod_flat==0] = -99
-plt.scatter(np.log10(Bfield.kmag.flatten()),np.log10(mod_Ak2.flatten()))
-plt.show()
+# plt.scatter(np.log10(2.0*np.pi/Bfield.kmag.flatten()),np.log10(mod_Ak2.flatten()))
+# plt.show()
 
 
 
@@ -165,8 +189,8 @@ B, PSD = Bfield.get_random_field_tribble(None, mod_Ak2)
 
 
 
-plt.imshow(PSD[:,:,0,0])
-plt.show()
+# plt.imshow(PSD[:,:,0,0])
+# plt.show()
 
 #Atilde[:,:,:,0].real = np.array([np.random.normal(loc=0.0, scale=x) for x in mod_Ak2]).reshape(shape)
 #Atilde[:,:,:,1].real = np.array([np.random.normal(loc=0.0, scale=x) for x in mod_Ak2]).reshape(shape)

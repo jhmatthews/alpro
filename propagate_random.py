@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np 
 from constants import *
 import constants as c
+import alpro 
+import matplotlib
 
 UNIT_TIME  = 1519252268630104.8
 UNIT_LENGTH= 50676.79373667135
@@ -15,9 +17,13 @@ def get_density(r):
 	return (x1 + x2)
 
 class Bfield:
-	def __init__(self, B0, fname="Bfield.npy", size=100):
+	def __init__(self, fname="Bfield.npy"):
+		# load the array
+		self.Bfull = np.load("Bfield.npy")
+
+	def slice(self, B0, size=100, slices=(100,100)):
 		# take a slice along the B field
-		self.B = np.load("Bfield.npy")[:,0,0,:]
+		self.B = self.Bfull[:,slices[0],slices[1],:]
 		Bstrength = np.linalg.norm(self.B, axis=1)
 		Brms = np.mean(np.sqrt(Bstrength**2))
 		normalisation = B0 / Brms
@@ -40,14 +46,6 @@ class Bfield:
 		By = self.interp_y(z)
 		return (Bx, By)
 
-
-# def get_B(r):
-# 	x = r/(93.0)
-# 	Bx = (0.00312443*(x**18)) - (0.0319991*(x**16)) + (0.260311*(x**14)) - (1.63197*(x**12)) + (7.58002*(x**10)) - (24.721*(x**8)) + (52.3929*(x**6)) - (63.8794*(x**4)) + (35.8973*(x**2)) - 5.86899	
-# 	By = (0.0102459*(x**17))-(0.0937683*(x**15)) + (0.671841*(x**13)) - (3.6406*(x**11)) + (14.2479*(x**9)) - (37.7455*(x**7)) + (61.3611*(x**5)) - (51.7231*(x**3)) + (16.9128*x)
-# 	return Bx, By
-
-
 def generate_field_arrays(domain_size, distribution):
 	x = []
 	L = 0.0
@@ -65,139 +63,124 @@ def generate_field_arrays(domain_size, distribution):
 	By = np.cos(phi)
 	return (Bx, By, ne, r, x)
 
-# take a slice along the B field
-Bfield_model = Bfield(1e-5)
+def Bfield1d_plot(z, Bfield_model, i):
+	# plot field
+	Bx, By = Bfield_model.get_B(z)
+	plt.plot(z, Bx, lw=3)
+	plt.plot(z, By, lw=3)
 
-
-z = np.linspace(0,100,256)
-Bx, By = Bfield_model.get_B(z)
-plt.plot(z, np.sqrt(Bx**2 + By**2), lw=3)
-
-lc = 14.7016
-Ls = np.array([0.01,0.1,0.2,0.5,1,2,5]) * lc
-
-for l in Ls:
-	zz = np.arange(0,100,l)
+	# plot coherence points 
+	zz = np.arange(0,100,lc)
 	Bx, By = Bfield_model.get_B(zz)
-	if l / lc == 1.0:
-		plt.plot(zz, np.sqrt(Bx**2 + By**2), ls="--", lw=3, alpha=1)
-	else:
-		plt.plot(zz, np.sqrt(Bx**2 + By**2), ls="--", alpha=0.7)
+	BB = np.sqrt(Bx**2 + By**2)
+	plt.scatter(zz, Bx, alpha=1)
+	plt.scatter(zz, By, alpha=1)
 
-plt.show()
+	# label and save 
+	plt.ylabel("r (kpc)")
+	plt.savefig("1d_fields/Bfield1d_{}.png".format(i))
+	plt.clf()
 
 np.random.seed(12)
 
-### Physical Parameters
-mass = 10.0**(-12.7)
-M = 1.0 / (1e-12) * 1e9
-g = 1e-11 * 1e-9
-ne = 1e-40
-omega_pl = np.sqrt(4.0 * PI * E * E * ne / MELEC) * HBAR_EV
-omega_pl = 1e-100
-B = 1e-5 * UNIT_GAUSS
-phi = 0.0
-L = 1.0
+# initialise B field model 
+Bfield_model = Bfield(1e-5)
 
+# define global arrays and variables 
+z = np.linspace(0,100,256)
+lc = 22.98
+Ls = np.array([0.01,0.1,0.2,0.5,1,2]) * lc
+Lmax = 100.0 - np.max(Ls)
+energy2 = np.logspace(3,7,1000)
 
-energy2 = np.logspace(3,5,1000)
-import powerlaw, alpro 
-# powerlaw PDF of coherence lengths 
-distribution = powerlaw.Power_Law(xmin=3.5,xmax=10.0,parameters=[1.2])
+# different slices
+slices_to_take = ((0,0),(25,25),(50,50),(75,75),(100,100))
 
-# get Ainit 
-Ainit = np.zeros( (len(energy2),6))
-Ainit2 = np.zeros( (len(energy2),6))
-# orientated in the y direction 
-direction = 2
+for islice,slices in enumerate(slices_to_take):
 
-# Ainit[:,0] = 1.0
-Ainit[:,direction] = 1.0
-Ainit2[:,0] = 1.0
-r = 0.0
+	# take a slice along the B field
+	Bfield_model.slice(1e-5, slices=slices)
 
-Lmax = 100.0
-Anew = Ainit
-theta = np.zeros_like(energy2)
+	Bx, By = Bfield_model.get_B(z)
+	Bfield1d_plot(z, Bfield_model, slices[0])
 
+	theta = np.zeros_like(energy2)
 
+	Probabilities = []
 
+	my_cmap = matplotlib.cm.get_cmap('viridis')
+	colors = my_cmap(np.linspace(0,1,num=len(Ls)))
 
-Probabilities = []
+	for il, L in enumerate(Ls):
+		r = -L / 2.0
+		myL = 0.0
+		EPSILON = 1e-10
 
-# Ls = [100.0/512.0,100.0/256.0,0.5,1.0,2.0]
-for L in Ls:
-	# L  = lc 
-	Lmax = 100.0 - np.max(Ls)
-	r = -L / 2.0
-	myL = 0.0
-	EPSILON = 1e-10
+		# g_a = 1e-11
+		density = 0.0
+		mass = 1e-9
 
-	# g_a = 1e-11
-	density = 0.0
-	mass = 1e-9
+		fudge_factor = 1.0
 
-	fudge_factor = 1.0
+		g_as = np.logspace(-12,-11,10)
+		g_as = [1e-11]
 
-	g_as = np.logspace(-12,-11,10)
-	g_as = [1e-11]
+		for g_a in g_as:
+			for mass in np.logspace(-11,-8,1):
+				Ainit = np.zeros( (len(energy2),6))
+				Ainit2 = np.zeros((len(energy2),6))
+				energys = energy2
+				Ainit[:,2] = 1.0
+				Ainit2[:,0] = 1.0
+				myL = 0.0
+				r = -L / 2.0
+				while myL < (Lmax-EPSILON):
 
-	for g_a in g_as:
-		for mass in np.logspace(-11,-8,1):
-			Ainit = np.zeros( (len(energy2),6))
-			Ainit2 = np.zeros((len(energy2),6))
-			energys = energy2
-			Ainit[:,direction] = 1.0
-			Ainit2[:,0] = 1.0
-			myL = 0.0
-			r = -L / 2.0
-			while myL < (Lmax-EPSILON):
+					myL += L 
+					r += L 
 
-				myL += L 
-				r += L 
+					print (myL, r)
 
-				print (myL, r)
+					ne = get_density(r)
+					Bx, By = Bfield_model.get_B(r)
+					B = np.sqrt(Bx**2 + By**2)
 
-				ne = get_density(r)
-				Bx,By = Bfield_model.get_B(r)
-				B = np.sqrt(Bx**2 + By**2)
+					#print (B, Bx, By)
+					# phi = np.arctan(By/Bx)
+					# B = np.sqrt(Bx**2 + By**2)
+					# theta = np.arctan(Ainit[:,1]/Ainit[:,2])
+					phi = (np.arctan(Bx/By) * np.ones_like(energys)) 
+					phi2 = (np.arctan(Bx/By) * np.ones_like(energys)) 
+					
+					#phi = np.random.random(size=len(energy2)) * np.pi/2.0
+					#print (Anew[0])
+					#B *= 1e-6 / fudge_factor
+					P1, Anew = alpro.get_P(energys, Ainit, phi, B, L, g_a * 1e-9, mass, 1e-20)
+					P2, Anew2 = alpro.get_P(energys, Ainit2, phi2, B, L, g_a * 1e-9, mass, 1e-20)
+					Ainit = Anew
+					Ainit2 = Anew2
+					# theta = -np.arctan(Anew[:,0]/Anew[:,2])
 
-				#print (B, Bx, By)
-				# phi = np.arctan(By/Bx)
-				# B = np.sqrt(Bx**2 + By**2)
-				# theta = np.arctan(Ainit[:,1]/Ainit[:,2])
-				phi = (np.arctan(Bx/By) * np.ones_like(energys)) 
-				phi2 = (np.arctan(Bx/By) * np.ones_like(energys)) 
-				
-				#phi = np.random.random(size=len(energy2)) * np.pi/2.0
-				#print (Anew[0])
-				#B *= 1e-6 / fudge_factor
-				P1, Anew = alpro.get_P(energys, Ainit, phi, B, L, g_a * 1e-9, mass, 1e-20)
-				P2, Anew2 = alpro.get_P(energys, Ainit2, phi2, B, L, g_a * 1e-9, mass, 1e-20)
-				Ainit = Anew
-				Ainit2 = Anew2
-				# theta = -np.arctan(Anew[:,0]/Anew[:,2])
+				P = 0.5 * (P1 + P2)
 
-			P = 0.5 * (P1 + P2)
+				# P = 0.5 * (P1 + P2)
+				print (myL)
+				plt.plot(energys/1e3, 1-P, lw=3, label=str(L/lc), ls="-", alpha=0.7, color=colors[il])
 
-			# P = 0.5 * (P1 + P2)
-			print (myL)
-			plt.plot(energys/1e3, 1-P, lw=3, label=str(L/lc), ls="-", alpha=0.7)
+	# plt.plot(energy2, Anew[:,4]**2, lw=3, label="Code Discretised", c="C3", ls=":")
+	#print (Anew)
+	# x,y = np.loadtxt("marsh_data.txt", unpack=True)
+	# plt.plot(x,y, label="Marsh Data", c="k", lw=3, ls="--")
+	plt.ylim(0,1.1)
+	plt.xlim(1,1e4)
+	plt.legend()
+	plt.ylabel(r"$P_{\gamma -> \gamma}$")
+	plt.semilogx()
+	plt.xlabel("Energy (keV)")
+	#plt.semilogy()
+	plt.savefig("prop_curves/propagation_{}.png".format(slices[0]), dpi=300)
 
-# plt.plot(energy2, Anew[:,4]**2, lw=3, label="Code Discretised", c="C3", ls=":")
-#print (Anew)
-# x,y = np.loadtxt("marsh_data.txt", unpack=True)
-# plt.plot(x,y, label="Marsh Data", c="k", lw=3, ls="--")
-plt.ylim(0,1.1)
-plt.xlim(1,100)
-plt.legend()
-plt.ylabel(r"$P_{\gamma -> \gamma}$")
-plt.semilogx()
-plt.xlabel("Energy (keV)")
-#plt.semilogy()
-plt.savefig("propagation.png", dpi=300)
-
-plt.clf()
+	plt.clf()
 # x = np.arange(0,93,0.1)
 # plt.plot(x, get_B(x)[0])
 # plt.plot(x, get_B(x)[1])
