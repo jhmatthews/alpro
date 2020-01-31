@@ -145,7 +145,7 @@ class MagneticField:
 
 
 
-N = 128
+N = 256
 # units are all in kiloparsec
 L = 100  		# size of cluster in kiloparsecs
 dx = L / N 		# resolution of cluster 

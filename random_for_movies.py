@@ -12,6 +12,47 @@ UNIT_MASS  = 5.6095363761802584e+32
 UNIT_GAUSS = 0.06925147467360344
 HBAR_EV = 6.582119569e-16
 
+def make_3panel_plot(E, P, Pnorm, Bfield_model, L, Lmax, savename):
+
+	# plot field
+	z = np.linspace(0, Lmax, 256)
+
+	plt.figure(figsize=(6,8))
+	plt.subplot(311)
+	Bx, By = Bfield_model.get_B(z)
+	plt.plot(z, Bx, lw=3)
+	plt.plot(z, By, lw=3)
+
+	# plot coherence points 
+	zz = np.arange(0,Lmax,L)
+	Bx, By = Bfield_model.get_B(zz)
+	BB = np.sqrt(Bx**2 + By**2)
+	plt.scatter(zz, Bx, alpha=1)
+	plt.scatter(zz, By, alpha=1)
+	plt.xlabel("$z$")
+
+	# plot survival curve 
+	plt.subplot(312)
+	plt.plot(E, P, lw=2, label=str(L/lc), ls="--", alpha=1, color="k")
+	plt.plot(E, Pnorm, lw=3, label=str(L/lc), ls="-", alpha=0.5, color="k")
+	plt.ylim(0.5,1)
+	plt.semilogx()
+	plt.xlabel("$E$")
+	plt.ylabel("Probability")
+
+	# plot survival curve 
+	plt.subplot(313)
+	plt.plot(E, (P-Pnorm)/Pnorm, lw=2, label=str(L/lc), ls="-", alpha=1, color="k")
+	plt.ylim(-0.3,0.3)
+	plt.semilogx()
+	plt.xlabel("$E$")
+	plt.ylabel("Relative Error")
+
+	plt.savefig("prop_curves/3panel_{}.png".format(savename), dpi=300)
+	plt.clf()
+
+
+
 def get_density(r):
 	x1 = 3.9e-2 / ((1.0 + (r/80.0))**1.8)
 	x2 = 4.05e-3 / ((1.0 + (r/280.0))**0.87)
@@ -55,8 +96,10 @@ class Bfield:
 			raise ValueError("degrade needs to be >= 1!")
 
 		# actual interpolation always done using 2nd order interp 
-		self.interp_x = interp1d(self.z, self.B[:,0], kind='quadratic')
-		self.interp_y = interp1d(self.z, self.B[:,1], kind='quadratic')
+		kind = "quadratic"
+		# kind='quadratic'
+		self.interp_x = interp1d(self.z, self.B[:,0], kind=kind)
+		self.interp_y = interp1d(self.z, self.B[:,1], kind=kind)
 
 
 	def get_B(self, z):
@@ -117,12 +160,15 @@ if mode == "lc":
 elif mode == "lgrid":
 	lc = 0.78/2.0 * DEGRADE_FACTOR
 	Ls = np.array([0.05,0.1,0.5,1,2]) * lc
+	Ls = np.linspace(0.1,2,20) * lc
 
-Lmax = 10.0
+Lmax = 100.0 - np.max(Ls)
 energy2 = np.logspace(3,7,1000)
 
 # different slices
 slices_to_take = ((0,0),(25,25),(50,50),(75,75),(100,100))
+#slices_to_take = ((0,0))
+
 
 for islice,slices in enumerate(slices_to_take):
 	print ("Slice", islice)
@@ -192,18 +238,10 @@ for islice,slices in enumerate(slices_to_take):
 				# plot the result 
 				#print (myL, myL-L, Lmax-EPSILON, Lmax, 100 - np.max(Ls))
 				else:
-					plt.plot(energys/1e3, ((1-P)-one_minus_P0)/one_minus_P0, lw=3, label=str(L/lc), ls="-", alpha=0.7, color=colors[il])
-
-
-	plt.title(mode)
-	plt.ylim(-0.3,0.3)
-	plt.xlim(1,1e4)
-	plt.legend()
-	plt.ylabel(r"$P_{\gamma -> \gamma}$ Residual")
-	plt.semilogx()
-	plt.xlabel("Energy (keV)")
-	#plt.semilogy()
-	plt.savefig("prop_curves/propagation_s{}_deg{}_{}.png".format(slices[0],DEGRADE_FACTOR,mode), dpi=300)
-
-	plt.clf()
+					#savename = "smode+"_"+str(il)
+					savename = "s{}_Lmax{}_{}{:03d}".format(slices[0], Lmax, mode, il)
+					#savename = "s{}_deg{}_Lmax{}_{}{:.1f}".format(slices[0], DEGRADE_FACTOR, Lmax, mode, L/lc)
+					make_3panel_plot(energys/1e3, 1-P, one_minus_P0, Bfield_model, L, Lmax, savename)
+					#make_3panel_plot(E, P, Pnorm, Bfield_model, L, Lmax, savename)
+					plt.close("all")
 
