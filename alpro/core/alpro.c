@@ -211,7 +211,7 @@ PropagateOne (gsl_vector_complex * A_new, double mass, double energy,
 /*  define functions in module */
 static PyMethodDef AlproMethods[] = {
   {"get_P", get_P, METH_VARARGS,
-   "evaluate the photon to axion probability"},
+   "Evaluate the photon to axion probability over a single domain"},
   {NULL, NULL, 0, NULL}
 };
 
@@ -221,13 +221,13 @@ static PyMethodDef AlproMethods[] = {
 /* Python version 3*/
 static struct PyModuleDef cModPyDem = {
   PyModuleDef_HEAD_INIT,
-  "alpro_module", "Some documentation",
+  "alprocore_module", "Backend for alpro code",
   -1,
   AlproMethods
 };
 
 PyMODINIT_FUNC
-PyInit_alpro (void)
+PyInit_alprocore (void)
 {
   PyObject *module;
   module = PyModule_Create (&cModPyDem);
@@ -244,10 +244,10 @@ PyInit_alpro (void)
 /* module initialization */
 /* Python version 2 */
 PyMODINIT_FUNC
-initalpro (void)
+initalprocore (void)
 {
   PyObject *module;
-  module = Py_InitModule ("alpro", AlproMethods);
+  module = Py_InitModule ("alprocore", AlproMethods);
   if (module == NULL)
     return;
   /* IMPORTANT: this must be called */

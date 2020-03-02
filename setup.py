@@ -3,16 +3,28 @@ import numpy
 
 libraries = ['m', 'gsl', 'gslcblas']
 
-# this should be a symbolic link 
+# IMPROVE this should be a symbolic link / or an env variable
 library_dirs = ['gsl_lib']
 include_dir = 'gsl_include'
 
 # define the extension module
-alpro_module = Extension('alpro',
-                    include_dirs=[numpy.get_include(), "/Users/matthews/winds/python/include"],
+alpro_module = Extension('alprocore',
+                    include_dirs=[numpy.get_include(), include_dir],
                     libraries = libraries,
                     library_dirs = library_dirs,
-                    sources = ['alpro.c', 'alpro_matrix.c'])
+                    sources = ['alpro/core/alpro.c', 'alpro/core/alpro_matrix.c'])
+
+# data files 
+data_files = ["data/*.dat"]
 
 # run the setup
-setup(ext_modules=[alpro_module])  
+setup(name = 'alpro',
+	  version = '1.0',
+	  packages = ["alpro"],
+	  description = 'Propagation of axion-like particles through magnetic fields',
+	  author_email = 'matthews@ast.cam.ac.uk',
+	  author = 'James Matthews',
+	  ext_modules=[alpro_module], 
+	  py_modules=["alpro"],
+	  package_data = {'alpro': data_files},
+	  include_package_data=True)  
