@@ -151,43 +151,30 @@ L = 100  		# size of cluster in kiloparsecs
 dx = L / N 		# resolution of cluster 
 Bfield = MagneticField(N)
 
-# create x,y,z arrays 
-# x = np.arange(-L,L,dx) #range in x
-# z = np.arange(-L,L,dx) #range in y
-# y = np.arange(-L,L,dx) #range in z
+nmodels = 500
+nmodel_temp = 10
+
 
 kmin = 2.0 * np.pi / L
 dx = L / Bfield.N
 kmax = 2.0 * np.pi / dx 
 
-# Bfield.kgrid *= kmin
-
-# print (np.linalg.norm(kgrid[0,0,0]))
-#kgrid2 = Bfield.kgrid * Bfield.kgrid
-#kmag = np.sqrt(np.sum(kgrid2, axis=3))
-#
-#print (Bfield.kgrid.shape, kgrid2.shape, kmag.shape)
-
-# n = (11./3.)+2
-
-# #k = np.arange(N, dtype=float)
-# mod_Ak2 = np.sqrt(np.power(Bfield.kgrid / kmin, -n))
-# mod_Ak2[mod_Ak2 == np.inf] = 1e50 
-# mod_Ak2[mod_Ak2 <= 0] = 1e-16
-# print (mod_Ak2.shape)
-
+# get Ak array 
 mod_Ak2 = Bfield.get_Ak2(L)
 
 mod_flat = mod_Ak2.flatten()
 mod_flat[mod_flat==0] = -99
-# plt.scatter(np.log10(2.0*np.pi/Bfield.kmag.flatten()),np.log10(mod_Ak2.flatten()))
-# plt.show()
 
+# get Bfield 
+import time 
+t0 = time.time()
+for i in range(nmodel_temp):
+	t1 = time.time()
+	B, PSD = Bfield.get_random_field_tribble(None, mod_Ak2)
+	np.save("Bfield_{}.npy".format(i), B)
+	print (time.time() - t1)
 
-
-B, PSD = Bfield.get_random_field_tribble(None, mod_Ak2)
-
-
+print ( (time.time() - t0) * 50.0 / 3600.0)
 
 # plt.imshow(PSD[:,:,0,0])
 # plt.show()
@@ -207,68 +194,64 @@ B, PSD = Bfield.get_random_field_tribble(None, mod_Ak2)
 #plt.plot(Bfield.kgrid[:,:,0,0], Bfield.Btilde[:,:,0,0])
 #plt.show()
 
+# Brms = np.sqrt(B**2) 
+# #print (np.mean(Brms[:,:,:,0]), np.mean(Brms[:,:,:,1]), np.mean(Brms[:,:,:,2]))
+
+# BB = np.linalg.norm(B, axis=3)
+
+# dBx = np.gradient(B[:,:,:,0], axis=0)
+# dBy = np.gradient(B[:,:,:,1], axis=1)
+# dBz = np.gradient(B[:,:,:,2], axis=2)
+# divB = dBx + dBy + dBz
+
+# #plt.imshow(BB[:,:,0])
+# #plt.colorbar()
+# #plt.show()
+# plt.subplot(221)
+# titles = ["Bx", "By", "Bz"]
+
+# for i in range(3):
+# 	plt.subplot(3,2,i+1)
+# 	plt.imshow(B[:,:,0,i])
+
+# plt.subplot(3,2,4)
+# plt.title("B")
+# plt.imshow(BB[:,:,0])
+
+# plt.subplot(3,2,5)
+# plt.title("div(B)")
+# plt.imshow(divB[:,:,0])
+# 	#plt.clf
 
 
 
+# # plt.clf()
+# # plt.figure()
+# plt.subplot(3,2,6)
+# plt.plot(B[0,:,0,0])
+# plt.plot(B[0,:,0,1])
+# plt.plot(B[0,:,0,2])
+# plt.show()
 
-Brms = np.sqrt(B**2) 
-#print (np.mean(Brms[:,:,:,0]), np.mean(Brms[:,:,:,1]), np.mean(Brms[:,:,:,2]))
-
-BB = np.linalg.norm(B, axis=3)
-
-dBx = np.gradient(B[:,:,:,0], axis=0)
-dBy = np.gradient(B[:,:,:,1], axis=1)
-dBz = np.gradient(B[:,:,:,2], axis=2)
-divB = dBx + dBy + dBz
-
-#plt.imshow(BB[:,:,0])
-#plt.colorbar()
-#plt.show()
-plt.subplot(221)
-titles = ["Bx", "By", "Bz"]
-
-for i in range(3):
-	plt.subplot(3,2,i+1)
-	plt.imshow(B[:,:,0,i])
-
-plt.subplot(3,2,4)
-plt.title("B")
-plt.imshow(BB[:,:,0])
-
-plt.subplot(3,2,5)
-plt.title("div(B)")
-plt.imshow(divB[:,:,0])
-	#plt.clf
-
-
-np.save("Bfield.npy", B)
-# plt.clf()
-# plt.figure()
-plt.subplot(3,2,6)
-plt.plot(B[0,:,0,0])
-plt.plot(B[0,:,0,1])
-plt.plot(B[0,:,0,2])
-plt.show()
-
-print (np.mean(divB), np.mean(BB))
-#print (np.sum(kgrid2, axis=3))
-#kmag = np.sqrt(kgrid.dot(kgrid))
-#
-# from FyeldGenerator import generate_field
-# import matplotlib.pyplot as plt
-# import numpy as np
-# # Helper that generates power-law power spectrum
-# def Pkgen(n):
-#     def Pk(k):
-#         return np.power(k, -n)
-#     return Pk
-# # Draw samples from a normal distribution
-# def distrib(shape):
-#     a = np.random.normal(loc=0, scale=1, size=shape)
-#     b = np.random.normal(loc=0, scale=1, size=shape)
-#     return a + 1j * b
-# N = 256
-# shape = (N,N,N)
-# field = generate_field(distrib, Pkgen(2), shape)
-# plt.imshow(field[0], cmap='seismic')
+# print (np.mean(divB), np.mean(BB))
+# #print (np.sum(kgrid2, axis=3))
+# #kmag = np.sqrt(kgrid.dot(kgrid))
+# #
+# # from FyeldGenerator import generate_field
+# # import matplotlib.pyplot as plt
+# # import numpy as np
+# # # Helper that generates power-law power spectrum
+# # def Pkgen(n):
+# #     def Pk(k):
+# #         return np.power(k, -n)
+# #     return Pk
+# # # Draw samples from a normal distribution
+# # def distrib(shape):
+# #     a = np.random.normal(loc=0, scale=1, size=shape)
+# #     b = np.random.normal(loc=0, scale=1, size=shape)
+# #     return a + 1j * b
+# # N = 256
+# # shape = (N,N,N)
+# # field = generate_field(distrib, Pkgen(2), shape)
+# # plt.imshow(field[0], cmap='seismic')
 # plt.show()

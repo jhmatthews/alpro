@@ -5,12 +5,23 @@ import constants as c
 import alpro 
 import matplotlib
 import sys
+import time
 
 UNIT_TIME  = 1519252268630104.8
 UNIT_LENGTH= 50676.79373667135
 UNIT_MASS  = 5.6095363761802584e+32
 UNIT_GAUSS = 0.06925147467360344
 HBAR_EV = 6.582119569e-16
+plt.rcParams["text.usetex"] = "True"
+plt.rcParams['xtick.labelsize']=14
+plt.rcParams['ytick.labelsize']=14
+plt.rcParams['font.serif']=['cm']
+plt.rcParams['font.family']='serif'	
+plt.rcParams["text.usetex"] = "True"
+plt.rcParams["lines.linewidth"] = 3
+plt.rcParams["axes.linewidth"] = 1.5
+plt.rcParams["xtick.major.width"] = 1.5
+plt.rcParams["ytick.major.width"] = 1.5
 
 def get_density(r):
 	x1 = 3.9e-2 / ((1.0 + (r/80.0))**1.8)
@@ -108,21 +119,18 @@ Bfield_model = Bfield(1e-5)
 DEGRADE_FACTOR = 1
 
 # define global arrays and variables 
-mode = sys.argv[1]
+mode = "lgrid"
 z = np.linspace(0,100,1024)
 
-if mode == "lc":
-	lc = 12.471
-	Ls = np.array([0.01,0.04,0.1,0.2,0.5,1,2]) * lc
-elif mode == "lgrid":
-	lc = 0.78/2.0 * DEGRADE_FACTOR
-	Ls = np.array([0.05,0.1,0.5,1,2]) * lc
+
+lc = 0.78/2.0 * DEGRADE_FACTOR
+Ls = np.array([0.05]) * lc
 
 Lmax = 10.0
 energy2 = np.logspace(3,7,1000)
 
 # different slices
-slices_to_take = ((0,0),(25,25),(50,50),(75,75),(100,100))
+slices_to_take = ((50,50),)
 
 for islice,slices in enumerate(slices_to_take):
 	print ("Slice", islice)
@@ -140,6 +148,8 @@ for islice,slices in enumerate(slices_to_take):
 	my_cmap = matplotlib.cm.get_cmap('viridis')
 	colors = my_cmap(np.linspace(0,1,num=len(Ls)+2))
 
+	plt.figure(figsize=(6,5))
+
 	for il, L in enumerate(Ls):
 		EPSILON = 1e-6
 
@@ -147,10 +157,10 @@ for islice,slices in enumerate(slices_to_take):
 		#density = 0.0
 		#mass = 1e-9
 
-		g_as = np.logspace(-12,-11,10)
-		g_as = [1e-11]
+		g_as = np.logspace(-12,-11,3)
+		g_as = [1e-12]
 
-		for g_a in g_as:
+		for ig, g_a in enumerate(g_as):
 			for mass in np.logspace(-11,-8,1):
 
 				# create the initial state vector 
@@ -176,8 +186,11 @@ for islice,slices in enumerate(slices_to_take):
 					phi2 = (np.arctan(Bx/By) * np.ones_like(energys)) 
 					
 					# get the axion probability for both polarisations 
-					P1, Anew = alpro.get_P(energys, Ainit, phi, B, L, g_a * 1e-9, mass, 1e-20)
-					P2, Anew2 = alpro.get_P(energys, Ainit2, phi2, B, L, g_a * 1e-9, mass, 1e-20)
+					t1 = time.time()
+					P1, Anew = alpro.get_P(energys, Ainit, phi, B, L, g_a * 1e-9, mass, 1e-2)
+					P2, Anew2 = alpro.get_P(energys, Ainit2, phi2, B, L, g_a * 1e-9, mass, 1e-2)
+
+					print (time.time() - t1)
 					
 					# record new initial vectors 
 					Ainit = Anew
@@ -186,24 +199,20 @@ for islice,slices in enumerate(slices_to_take):
 				# average the probabilities
 				P = 0.5 * (P1 + P2)
 
-				if il == 0:
-					one_minus_P0 = 1-P
 
-				# plot the result 
-				#print (myL, myL-L, Lmax-EPSILON, Lmax, 100 - np.max(Ls))
-				else:
-					plt.plot(energys/1e3, ((1-P)-one_minus_P0)/one_minus_P0, lw=3, label=str(L/lc), ls="-", alpha=0.7, color=colors[il])
+				plt.plot(energys/1e3, (1-P), lw=3, label=str(L/lc), ls="-", alpha=0.7, color=colors[ig])
 
 
-	plt.title(mode)
-	plt.ylim(-0.3,0.3)
-	plt.xlim(1,1e4)
-	plt.legend()
-	plt.ylabel(r"$P_{\gamma -> \gamma}$ Residual")
+	#plt.title(mode)
+	plt.text(2,0.9984,r"$g_a = 10^{-12}~\mathrm{GeV}^{-1}, m_a = 10^{-11}~\mathrm{eV}$", fontsize=16)
+	#plt.ylim(-0.3,0.3)
+	plt.xlim(1,1e2)
+	#plt.legend()
+	plt.ylabel(r"$P_{\gamma -> \gamma}$", fontsize=16)
 	plt.semilogx()
-	plt.xlabel("Energy (keV)")
+	plt.xlabel("Energy (keV)", fontsize=16)
 	#plt.semilogy()
-	plt.savefig("prop_curves/propagation_s{}_deg{}_{}.png".format(slices[0],DEGRADE_FACTOR,mode), dpi=300)
+	plt.savefig("onecurve.png".format(slices[0],DEGRADE_FACTOR,mode), dpi=300)
 
 	plt.clf()
 
