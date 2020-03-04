@@ -2,32 +2,8 @@ import alpro.models as models
 #import powerlaw
 import numpy as np 
 import alpro
-
-class my_powerlaw:
-	'''
-	container for generating random numbers from a powerlaw with slope < 1
-	'''
-	def __init__(self, n=1.2, xmin=3.5, xmax=10.0):
-		self.n = n
-		self.alpha = 1.0 - self.n
-		self.xmin = xmin 
-		self.xmax = xmax 
-
-	def rvs(self, size=None):
-		'''
-		generate random variables
-		'''
-		if size == None:
-			z = np.random.random()
-		else:
-			z = np.random.random(size=size)
-
-		term1 = z * (self.xmax ** self.alpha)
-		term2 = (1. - z) * (self.xmin ** self.alpha)
-		x = (term1 + term2) ** (1.0 / self.alpha)
-		return (x)
-
-
+import matplotlib
+import alpro.util as util 
 
 class Survival:
 	'''
@@ -41,17 +17,17 @@ class Survival:
 
 		if self.model == "1821":
 			self.cluster = models.ClusterProfile(model="russell")
-			pl = my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
+			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
 			self.coherence_func = pl.rvs
 
 		elif self.model == "1275a":
 			self.cluster = models.ClusterProfile(model="a")
-			pl = my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
+			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
 			self.coherence_func = pl.rvs
 
 		elif self.model == "1275b":
 			self.cluster = models.ClusterProfile(model="b")
-			pl = my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
+			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
 			self.coherence_func = pl.rvs
 
 	def init_model(self, lcorr=None):
