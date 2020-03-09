@@ -3,9 +3,24 @@ import matplotlib.pyplot as plt
 
 class my_powerlaw:
 	'''
-	container for generating random numbers from a powerlaw with slope < 1
+	container for generating random numbers from a powerlaw with slope < 1. 
+	For a power of form x**-n, with b>1, from xmin to xmax, the resulting
+	CDF can be shown to take the analytic form
+
+		CDF(x) = (xmin^alpha - x^alpha) / (xmin^alpha - xmax^alpha)
+
+	where alpha = 1-n. Thus, if z is a random number in range (0,1),
+	then a random variable rv can be found by inverting this expression,
+	i.e. rv = [z * (b^alpha - a^alpha) + a^alpha] ^ (1/alpha).
+
+	This is embedded in a class so an individual function can be passed without
+	additional arguments, the function rvs() generates the actual random numbers
+	similarly to scipy.stats distribution syntax.
 	'''
 	def __init__(self, n=1.2, xmin=3.5, xmax=10.0):
+		'''
+		initialise the powerlaw parameters
+		'''
 		self.n = n
 		self.alpha = 1.0 - self.n
 		self.xmin = xmin 
@@ -13,7 +28,8 @@ class my_powerlaw:
 
 	def rvs(self, size=None):
 		'''
-		generate random variables
+		generate (size) random variables. if size is None, 
+		generate a single float.
 		'''
 		if size == None:
 			z = np.random.random()
@@ -22,8 +38,8 @@ class my_powerlaw:
 
 		term1 = z * (self.xmax ** self.alpha)
 		term2 = (1. - z) * (self.xmin ** self.alpha)
-		x = (term1 + term2) ** (1.0 / self.alpha)
-		return (x)
+		rv = (term1 + term2) ** (1.0 / self.alpha)
+		return (rv)
 
 def set_default_plot_params(tex=False, dpi=300):
 	if tex:

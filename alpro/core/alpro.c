@@ -26,6 +26,7 @@ get_P (PyObject * self, PyObject * args)
   NpyIter_IterNextFunc *in_iternext;
   NpyIter_IterNextFunc *out_iternext;
   A_temp = calloc (sizeof (double), 6);
+  int blah;
 
   /*  parse single numpy array argument with a series of double variables after it */
   if (!PyArg_ParseTuple
