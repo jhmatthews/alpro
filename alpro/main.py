@@ -39,11 +39,11 @@ class Survival:
 		else:
 			self.domain = models.FieldModel(profile=self.cluster.profile)
 
-	def get_curve(self, energies, random_seed, L):
+	def get_curve(self, energies, random_seed, L, r0=10.0):
 		if self.model == "libanov":
 			self.domain.create_libanov_field()
 		else:
-			self.domain.create_box_array(L, random_seed, self.coherence_func) 
+			self.domain.create_box_array(L, random_seed, self.coherence_func, r0=r0) 
 
 		P = self.propagate(self.domain, energies)
 		return (P)

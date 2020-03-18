@@ -144,7 +144,7 @@ class FieldModel:
 		self.phi = np.arctan(self.Bx/self.By) 
 		self.ne = 1e-20 * np.ones_like(self.r)	# vanishing
 
-	def create_box_array(self, L, random_seed, coherence):
+	def create_box_array(self, L, random_seed, coherence, r0=10.0):
 		'''
 		create an array of random magnetic field boxes by drawing
 		random angles and box sizes from coherence_func. 
@@ -160,6 +160,9 @@ class FieldModel:
 							function that computes coherence length at distance r,
 							or a single-value floating point number if the coherence
 							length is constant.
+
+			r0 				float
+							inner radius of the calculation (used to excide an inner region)
 		'''
 
 		if isinstance(coherence, float) == False and callable(coherence) == False:
@@ -169,8 +172,8 @@ class FieldModel:
 		np.random.seed(random_seed)
 
 		# initialise arrays and counters 
-		r = 0.0
-		rcen = 0.0
+		r = r0
+		rcen = r0
 		Bx_array, By_array = [], []
 		rcen_array, r_array = [], []
 		B_array, ne_array = [], []
@@ -179,7 +182,7 @@ class FieldModel:
 		# IMPROVE?
 		# wonder if there's a better way to do this?
 		# vectorise it, you mug.
-		#print (r, L)
+		# print (r, L)
 		while r < L:
 			# get a coherence length which will be the size of the box 
 			# this can be a function or a float 
@@ -188,8 +191,8 @@ class FieldModel:
 			else:
 				lc = coherence
 
-			if rcen == 0.0:
-				rcen = lc / 2.0
+			if rcen == r0:
+				rcen += lc / 2.0
 			else:
 				rcen += lc
 
