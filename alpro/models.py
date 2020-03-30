@@ -21,12 +21,12 @@ class units:
 # class to use for units
 unit = units()
 
-def random_angle():
+def random_angle(size=None):
 	'''
 	compute a random isotropic angle 
 	'''
-	costheta = 2.0 * np.random.random() - 1.0
-	phi = 2.0 * np.pi * np.random.random()
+	costheta = (2.0 * np.random.random(size=size)) - 1.0
+	phi = 2.0 * np.pi * np.random.random(size=size)
 	theta = np.arccos(costheta)
 	return (theta, phi)
 
@@ -45,7 +45,7 @@ class ClusterProfile:
 	'''
 	container for a magentic field and density profile for a cluster
 	'''
-	def __init__(self, model="a", plasma_beta = 100, t_keV = 1.0):
+	def __init__(self, model="a", plasma_beta = 100):
 		self.plasma_beta = plasma_beta
 
 		if model == "a":
@@ -53,13 +53,11 @@ class ClusterProfile:
 			self.get_B = self.B_modA 
 			self.density = self.churasov_density
 			self.n0 = self.density(0.0)
-			self.n25 = self.density(25.0)
 
 		elif model == "b":
 			# Model B from Reynolds+ 2020
 			self.get_B = self.B_modB 
 			self.density = self.churasov_density
-			self.n0 = self.density(0.0)
 			self.n25 = self.density(25.0)
 
 		elif model == "russell":
@@ -121,8 +119,8 @@ class ClusterProfile:
 			r 	float
 				distance from cluster centre in kpc
 		'''
-		term1 = 3.9e-2 / (1.0 + (r/80.0))**1.8
-		term2 = 4.05e-3 / (1.0 + (r/280.0))**0.87
+		term1 = 3.9e-2 / (( 1.0 + (r/80.0))**1.8)
+		term2 = 4.05e-3 / ((1.0 + (r/280.0))**0.87)
 		return (term1 + term2)
 
 	def profile(self, r):
@@ -131,9 +129,12 @@ class ClusterProfile:
 
 
 class FieldModel:
-	def __init__(self, profile, plasma_beta=100):
+	def __init__(self, profile, plasma_beta=100, coherence_r0 = None):
 		self.profile = profile
 		self.beta = plasma_beta
+		# coherence_r0 scales the coherence lengths with radius 
+		# by a factor of (1 + r/coherence_r0), in kpc
+		self.coherence_r0 = coherence_r0
 
 	def create_libanov_field(self, deltaL=1.0, Lmax=93.0):
 		self.r = np.arange(0, Lmax-deltaL, deltaL)
@@ -143,6 +144,11 @@ class FieldModel:
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
 		self.phi = np.arctan(self.Bx/self.By) 
 		self.ne = 1e-20 * np.ones_like(self.r)	# vanishing
+
+	def get_rm(self):
+		prefactor = unit.e ** 3 / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
+		integral = np.trapz(self.rcen, self.Bz)
+		return (prefactor * integral)
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0):
 		'''
@@ -171,18 +177,16 @@ class FieldModel:
 		# set random number seed 
 		np.random.seed(random_seed)
 
+
+
 		# initialise arrays and counters 
 		r = r0
 		rcen = r0
-		Bx_array, By_array = [], []
 		rcen_array, r_array = [], []
-		B_array, ne_array = [], []
 		deltaL_array = []
 
 		# IMPROVE?
 		# wonder if there's a better way to do this?
-		# vectorise it, you mug.
-		# print (r, L)
 		while r < L:
 			# get a coherence length which will be the size of the box 
 			# this can be a function or a float 
@@ -191,36 +195,50 @@ class FieldModel:
 			else:
 				lc = coherence
 
+			if self.coherence_r0 != None:
+				lc *= (1.0 + (r/(self.coherence_r0)))
+
+			# ensure the simulation is truncated at distance L
+			if (r + lc) > L:
+				lc = (L-r) + 1e-10
+
 			if rcen == r0:
 				rcen += lc / 2.0
 			else:
 				rcen += lc
 
-			# draw a random isotropic angle 
-			theta, phi = random_angle()
-
-			# get density and magnetic field strength at centre of box
-			density, B = self.profile(rcen)
-
-			# get the x and y components and increment r
-			B_array.append(B)
-			ne_array.append(density)
-			Bx_array.append(B * np.sin(theta) * np.cos(phi))
-			By_array.append(B * np.sin(theta) * np.sin(phi))
+			r += lc
 			rcen_array.append(rcen)
 			r_array.append(r)
 			deltaL_array.append(lc)
-			r += lc
 
-		# copy to class 
-		self.deltaL = np.array(deltaL_array)
-		self.ne = np.array(ne_array)
-		self.B = np.array(B_array)
-		self.Bx = np.array(Bx_array)
-		self.By = np.array(By_array)
-		self.phi = np.arctan(self.Bx/self.By) 
+		# now we have box sizes and radii, get the field and density in each box 
+		Ncells = len(r_array)
 		self.r = np.array(r_array)
 		self.rcen = np.array(rcen_array)
+		self.deltaL = np.array(deltaL_array)
+
+		# draw random isotropic angles and save phi
+		theta, phi = random_angle(size = Ncells)
+		phi = phi
+
+		# get density and magnetic field strength at centre of box
+		self.ne, Btot = self.profile(self.r)
+
+		# get the x and y components and increment r
+		#Bx_array.append(B * np.sin(theta2))
+		#y_array.append(B * np.cos(theta2))
+		self.Bx = Btot * np.sin(theta) * np.cos(phi)
+		self.By = Btot * np.sin(theta) * np.sin(phi)
+
+		# note B is actually Bperp
+		self.B = np.sqrt(self.Bx**2  + self.By **2)
+		self.phi = np.arctan(self.Bx/self.By) 
+		#self.phi = phi
+
+		self.Bz = Btot * np.cos(theta) 
+		self.rm = self.get_rm()
+
 
 
 

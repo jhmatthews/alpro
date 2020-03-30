@@ -13,9 +13,9 @@
 #define const_H_OVER_K			4.799437e-11
 #define const_STEFAN_BOLTZMANN 		5.6696e-5
 #define const_THOMPSON			0.66524e-24
-#define const_PI  				  3.1415927
+#define const_PI  				  3.141592653589793
 #define const_MELEC 				9.10956e-28
-#define const_ECHARGE				4.8035e-10      /* Electric charge in esu */
+#define const_ECHARGE				4.8032045057134676e-10      /* Electric charge in esu */
 #define const_MPROT 				1.672661e-24
 #define const_MSOL 				  1.989e33
 #define const_PC				    3.086e18

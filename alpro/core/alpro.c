@@ -43,7 +43,7 @@ get_P (PyObject * self, PyObject * args)
   /* coupling constant in units used by De Angelis et al. */
   M = 1.0 / g_a;
 
-  /* set plasma frequency for n = 1e-2 */
+  /* set plasma frequency for electron density ne */
   omega_pl =
     sqrt (4.0 * const_PI * const_ECHARGE * const_ECHARGE * ne /
 	  const_MELEC) * const_HBAR_EV;
