@@ -45,13 +45,18 @@ class Survival:
 		else:
 			self.domain = models.FieldModel(profile=self.cluster.profile, coherence_r0 = coh_r0)
 
-	def get_curve(self, energies, random_seed, L, r0=10.0, radial_profile = False):
+	def get_curve(self, energies, random_seed, L, r0=10.0, radial_profile = False, rm_reject = np.inf):
 		if self.model == "libanov":
 			self.domain.create_libanov_field()
-		else:
+		else: 
+
 			self.domain.create_box_array(L, random_seed, self.coherence_func, r0=r0) 
 
-		P, P_radial = self.propagate(self.domain, energies)
+		# only compute curve if RM Acceptable 
+		if self.domain.rm < rm_reject:
+			P, P_radial = self.propagate(self.domain, energies)
+		else: 
+			P, P_radial = None, None 
 
 		if radial_profile:
 			return (P, P_radial)

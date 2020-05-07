@@ -170,10 +170,15 @@ PropagateOne (gsl_vector_complex * A_new, double mass, double energy,
   get_eigenvalues (EVarray, Deltas);
 
   /* calculate T matrices from mixing angle, alpha (eq 3 */
-  alpha = 0.5 * atan (2.0 * Deltas[AG] / (Deltas[PL] - Deltas[AA]));
-  get_T_matrices (alpha, &T1, &T2, &T3);
+  // alpha = 0.5 * atan (2.0 * Deltas[AG] / (Deltas[PL] - Deltas[AA]));
+  // printf("ALPHA is %8.4e Deltas %8.4e %8.4e %8.4e\n", alpha, Deltas[AG], Deltas[PL], Deltas[AA]);
+  alpha = 0.5 * atan2 (2.0 * Deltas[AG], (Deltas[PL] - Deltas[AA]));
+  // printf("ALPHA is %8.4e Deltas %8.4e %8.4e %8.4e\n", alpha, Deltas[AG], Deltas[PL], Deltas[AA]);
+  //alpha = 0.5 * atan(B / M * 2.0 * energy / ((mass * mass) - (omega_pl * omega_pl))); 
+  //printf("ALPHA is %8.4e Deltas %8.4e %8.4e %8.4e\n", alpha, Deltas[AG], Deltas[PL], Deltas[AA])
+  get_T_matrices (alpha, EVarray, Deltas, &T1, &T2, &T3);
   /* alternative approach commented out */
-  // get_T_matrices2 (EVarray, Deltas, &T1, &T2, &T3);
+  //get_T_matrices2 (EVarray, Deltas, &T1, &T2, &T3);
 
 
   /* construct the transfer matrix for the idealised parallel situation */

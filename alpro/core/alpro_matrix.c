@@ -38,27 +38,34 @@ get_deltas (double Deltas[], double mass, double energy, double M, double B,
 	    double omega_pl)
 {
   double x;
-  Deltas[PL] = -(omega_pl * omega_pl) / 2.0 / energy;
-  Deltas[AA] = -(mass * mass) / 2.0 / energy;
-  Deltas[AG] = B / 2.0 / M;
+  Deltas[PL] = -(omega_pl * omega_pl) / 2.0 / energy * UNIT_DELTA;
+  Deltas[AA] = -(mass * mass) / 2.0 / energy * UNIT_DELTA;
+  Deltas[AG] = B / 2.0 / M * UNIT_DELTA;
 
   /* now get Delta_osc */
   x = (Deltas[PL] - Deltas[AA]) * (Deltas[PL] - Deltas[AA]);
-  Deltas[OSC] = sqrt (x + (4.0 * Deltas[AG] * Deltas[AG]));
+  Deltas[OSC] = sqrt (x + (4.0 * Deltas[AG] * Deltas[AG])) * UNIT_DELTA;
+
+  // int i;
+  // for (i == 0; i < NDELTAS; i++)
+  // {
+  //   Deltas[i] = Deltas[i]*1e30;
+  // }
+
 }
 
 int
 get_eigenvalues (double EVarray[3], double Deltas[NDELTAS])
 {
   /* get eigenvalues of mixing matrix */
-  EVarray[0] = Deltas[PL];
-  EVarray[1] = 0.5 * (Deltas[PL] + Deltas[AA] - Deltas[OSC]);
-  EVarray[2] = 0.5 * (Deltas[PL] + Deltas[AA] + Deltas[OSC]);
+  EVarray[0] = Deltas[PL] / UNIT_DELTA;
+  EVarray[1] = 0.5 * (Deltas[PL] + Deltas[AA] - Deltas[OSC]) / UNIT_DELTA;
+  EVarray[2] = 0.5 * (Deltas[PL] + Deltas[AA] + Deltas[OSC]) / UNIT_DELTA;
   return 0;
 }
 
 void
-get_T_matrices (double alpha, gsl_matrix_complex_view * T1,
+get_T_matrices (double alpha, double EVarray[3], double Deltas[4], gsl_matrix_complex_view * T1,
 		gsl_matrix_complex_view * T2, gsl_matrix_complex_view * T3)
 {
   int i, j;
@@ -66,7 +73,10 @@ get_T_matrices (double alpha, gsl_matrix_complex_view * T1,
   double T1_temp[nrows][nrows], T2_temp[nrows][nrows], T3_temp[nrows][nrows];
   double T1_data[2 * nrows * nrows], T2_data[2 * nrows * nrows],
     T3_data[2 * nrows * nrows];
-
+  double t, u, v, s;
+  t = Deltas[PL];
+  v = Deltas[AG];
+  u = Deltas[AA];
   /* zero the matrixes */
   for (i = 0; i < nrows; i++)
     {
@@ -84,6 +94,36 @@ get_T_matrices (double alpha, gsl_matrix_complex_view * T1,
   T2_temp[2][1] = T2_temp[1][2] = -sin (alpha) * cos (alpha);
   T3_temp[2][1] = T3_temp[1][2] = sin (alpha) * cos (alpha);
   T2_temp[2][2] = T3_temp[1][1] = cos (alpha) * cos (alpha);
+
+
+  // printf("T2 Matrix a:\n");
+  // print_matrix(T2_temp, 3);
+
+  //   /* zero the matrixes */
+  // for (i = 0; i < nrows; i++)
+  //   {
+  //     for (j = 0; j < nrows; j++)
+  // {
+  //   T1_temp[i][j] = T2_temp[i][j] = T3_temp[i][j] = 0.0;
+  // }
+  //   }
+
+
+  //   /* second and third matrixes, eqs 36 and 37 */
+  // T2_temp[1][1] = T3_temp[2][2] =
+  //   (EVarray[2] - t) / (EVarray[2] - EVarray[1]);
+  // T2_temp[2][1] =
+  //   (EVarray[2] - t) * (EVarray[1] - t) / v / (EVarray[2] - EVarray[1]);
+  // T2_temp[1][2] = -v / (EVarray[2] - EVarray[1]);
+  // T2_temp[2][2] = T3_temp[1][1] =
+  //   -(EVarray[1] - t) / (EVarray[2] - EVarray[1]);
+  // T3_temp[2][1] = -T2_temp[2][1];
+  // T3_temp[1][2] = -T2_temp[1][2];
+
+  // printf("T2 Matrix b:\n");
+  // print_matrix(T2_temp, 3);
+
+  // exit(0);
 
   /* populate the matrixes */
   for (i = 0; i < nrows; i++)
@@ -238,3 +278,18 @@ pyvector_to_Carrayptrs (PyArrayObject * arrayin)
   n = arrayin->dimensions[0];
   return (double *) arrayin->data;	/* pointer to arrayin data as double */
 }
+
+
+void print_matrix(double matrix[3][3], int nrows)
+{
+  int i, j;
+  for (i = 0; i < nrows; i++)
+    {
+      for (j = 0; j < nrows; j++)
+  {
+    printf("%8.4e ", matrix[i][j]);
+  }
+    printf("\n");
+    }
+}
+

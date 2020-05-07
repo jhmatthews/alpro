@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 
 from mpl_toolkits import mplot3d
 
-B = np.load("Bfield.npy")
+B = np.load("Bfield_0.npy")
 
 B = np.sqrt(np.sum(B**2, axis=3))
+B = B**2
 
 x = np.arange(256)
 fig = plt.figure()
@@ -29,4 +30,5 @@ ax.set_xlim3d(0,limit)
 ax.set_ylim3d(0,limit)
 ax.set_zlim3d(0,limit)
 plt.show()
-# ax.pcolormesh()
+# ax.
+

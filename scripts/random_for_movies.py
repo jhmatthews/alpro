@@ -11,6 +11,7 @@ UNIT_LENGTH= 50676.79373667135
 UNIT_MASS  = 5.6095363761802584e+32
 UNIT_GAUSS = 0.06925147467360344
 HBAR_EV = 6.582119569e-16
+alpro.util.set_default_plot_params() 
 
 def make_3panel_plot(E, P, Pnorm, Bfield_model, L, Lmax, savename):
 
@@ -61,7 +62,7 @@ def get_density(r):
 class Bfield:
 	def __init__(self, fname="Bfield.npy"):
 		# load the array
-		self.Bfull = np.load("Bfield.npy")
+		self.Bfull = np.load(fname)
 
 	def slice(self, B0, size=100, slices=(100,100),degrade=1):
 		# take a slice along the B field
@@ -146,7 +147,7 @@ def Bfield1d_plot(z, Bfield_model, i, Lmax, lc):
 np.random.seed(12)
 
 # initialise B field model 
-Bfield_model = Bfield(1e-5)
+Bfield_model = Bfield(fname="Bfield_0.npy")
 
 DEGRADE_FACTOR = 1
 
@@ -162,12 +163,16 @@ elif mode == "lgrid":
 	Ls = np.array([0.05,0.1,0.5,1,2]) * lc
 	Ls = np.linspace(0.1,2,20) * lc
 
+#Ls = np.linspace(0.039,25.0,100.0)
+Ls = np.logspace(-1.5,1.4,100)
+
 Lmax = 100.0 - np.max(Ls)
+Lmax = 70.0
 energy2 = np.logspace(3,7,1000)
 
 # different slices
 slices_to_take = ((0,0),(25,25),(50,50),(75,75),(100,100))
-#slices_to_take = ((0,0))
+slices_to_take = ((25,25),)
 
 
 for islice,slices in enumerate(slices_to_take):
@@ -181,23 +186,24 @@ for islice,slices in enumerate(slices_to_take):
 
 	theta = np.zeros_like(energy2)
 
-	Probabilities = []
+	probabilities = np.zeros((len(Ls),len(energy2)))
 
 	my_cmap = matplotlib.cm.get_cmap('viridis')
 	colors = my_cmap(np.linspace(0,1,num=len(Ls)+2))
 
 	for il, L in enumerate(Ls):
+		print (il, len(Ls))
 		EPSILON = 1e-6
 
 		# g_a = 1e-11
 		#density = 0.0
 		#mass = 1e-9
 
-		g_as = np.logspace(-12,-11,10)
-		g_as = [1e-11]
+		g_as = np.logspace(-13,-11,10)
+		g_as = [5e-13]
 
 		for g_a in g_as:
-			for mass in np.logspace(-11,-8,1):
+			for mass in np.logspace(-13,-8,1):
 
 				# create the initial state vector 
 				Ainit = np.zeros( (len(energy2),6))
@@ -244,4 +250,59 @@ for islice,slices in enumerate(slices_to_take):
 					make_3panel_plot(energys/1e3, 1-P, one_minus_P0, Bfield_model, L, Lmax, savename)
 					#make_3panel_plot(E, P, Pnorm, Bfield_model, L, Lmax, savename)
 					plt.close("all")
+
+					probabilities[il] = 1-P
+
+plt.close("all")
+def L_residual_plot(lengths, resid, fname="residual_v_length", ylabel="Residual", 
+	                lims=(-0.2,0.2)):
+	plt.figure(figsize=(7,5))
+
+	plt.plot(lengths, resid, ls="steps")
+	plt.xlabel("Resolution (kpc)", fontsize=16)
+	plt.ylabel(ylabel, fontsize=16)
+	plt.xlim(0.039,25.0)
+	plt.ylim(lims[0], lims[1])
+	plt.gca().vlines([0.39,12.471], lims[0],lims[1], color="k", ls="--", lw=2)
+	plt.text(14,-0.1,"$l_c$", fontsize=14)
+	plt.text(0.43,-0.1,r"$l_{{ \rm grid}}$", fontsize=14)
+	plt.semilogx()
+	plt.savefig(fname+"png", dpi=200)
+
+
+from scipy.interpolate import interp1d
+interped_probs = np.zeros_like(probabilities)
+E_linear = np.linspace(1e3,1e4,100)
+E_linear = np.logspace(3,4,100)
+interped_probs = np.zeros( (len(Ls),len(E_linear)) )
+for i in range(len(Ls)):
+	interp_func = interp1d(energys, probabilities[i])
+	interped_probs[i,:] = interp_func(E_linear)
+
+probabilities_use = interped_probs
+
+one_minus_P0 = probabilities_use[1] 
+resid = (probabilities_use - one_minus_P0) / one_minus_P0
+mean_resid = np.mean(resid, axis=1) 
+median_resid = np.median(resid, axis=1) 
+max_resid = np.max(resid, axis=1) 
+mean_P = np.mean(probabilities, axis=1)
+
+L_residual_plot(Ls, mean_resid, fname="residual_l_mean", ylabel="Mean Residual")
+L_residual_plot(Ls, median_resid, fname="residual_l_median", ylabel="Median Residual")
+#L_residual_plot(Ls, max_resid, fname="residual_l_max", ylabel="Max Residual")
+L_residual_plot(Ls, mean_P, fname="prob_l_mean", ylabel=r"Mean $P_{\gamma \rightarrow \gamma}$", lims=(0.5,1))
+
+plt.figure(figsize=(7,5))
+plt.pcolormesh(np.log10(E_linear), Ls, probabilities_use, vmin=0.7)
+cbar = plt.colorbar()
+plt.semilogy()
+plt.ylim(0.05,25.0)
+plt.gca().hlines([0.39,12.471], 3,4, color="C3", ls="--", lw=2)
+plt.text(14,-0.1,"$l_c$", fontsize=14, color="C3")
+plt.text(0.43,-0.1,r"$l_{{ \rm grid}}$", fontsize=14, color="C3")
+cbar.set_label(r"$P_{\gamma \rightarrow \gamma}$")
+plt.xlabel(r"$\log E$ (eV)", fontsize=16)
+plt.ylabel("Resolution (kpc)", fontsize=16)
+plt.savefig("heatmap.png")
 

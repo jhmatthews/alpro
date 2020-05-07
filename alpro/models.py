@@ -1,8 +1,13 @@
 import numpy as np 
 from scipy.interpolate import interp1d
 import types, os
+from scipy.integrate import simps
 
 class units:
+    '''
+    class containing some units. Should probably use astropy units 
+    but I find them a bit annoying.
+    '''
     def __init__(self):
         self.kpc = 3.086e21
         self.pc = 3.086e18
@@ -13,10 +18,18 @@ class units:
         self.radian = 57.29577951308232
         self.msol = 1.989e33
         self.mprot = 1.672661e-24
-        self.ev = 1.602192e-12
-        self.kb = 1.38062e-16
-        self.h = 6.6262e-27
-        self.g = 6.670e-8
+        self.melec = 9.10956e-28
+        self.melec_csq = self.melec * self.c * self.c
+        self.mprot_csq = self.mprot * self.c * self.c
+        self.e = 4.8035e-10     # fundamental charge 
+        self.ev = 1.602192e-12  # electron volts in CGS
+        self.kb = 1.38062e-16   # boltzmann 
+        self.h = 6.6262e-27     # plank 
+        self.hbar = self.h / np.pi / np.pi      
+        self.g = 6.670e-8       # gravitational 
+        self.hbar_c = self.hbar * self.c
+        self.alpha = self.e * self.e / self.hbar_c
+        self.thomson = 0.66524e-24
 
 # class to use for units
 unit = units()
@@ -45,7 +58,8 @@ class ClusterProfile:
 	'''
 	container for a magentic field and density profile for a cluster
 	'''
-	def __init__(self, model="a", plasma_beta = 100):
+	def __init__(self, model="a", plasma_beta = 100, B_rms=None, n=None):
+		
 		self.plasma_beta = plasma_beta
 
 		if model == "a":
@@ -53,12 +67,33 @@ class ClusterProfile:
 			self.get_B = self.B_modA 
 			self.density = self.churasov_density
 			self.n0 = self.density(0.0)
+			self.B0 = 2.5e-5
+			self.B_exponent = 0.7
 
 		elif model == "b":
 			# Model B from Reynolds+ 2020
 			self.get_B = self.B_modB 
 			self.density = self.churasov_density
 			self.n25 = self.density(25.0)
+
+		elif model == "flat":
+			'''
+			allow to just have a uniform field
+			'''
+			self.B_rms = B_rms
+			self.n = n
+			self.get_B = self.Bflat
+			self.density = self.churasov_density
+
+		elif model == "murgia":
+			self.n0 = 1e-3 
+			self.r0 = 400.0 
+			self.B_exponent = 0.5
+			self.beta = 0.6
+			self.B0 = 1.0
+			self.density = self.beta_density
+			self.get_B = self.B_modA 
+
 
 		elif model == "russell":
 			# Russell+ 2010 paper on 1821
@@ -80,13 +115,26 @@ class ClusterProfile:
 			#n = P / kT
 
 			# create interpolation functions
-			self.get_B = interp1d(r, B, kind="quadratic", fill_value="extrapolate")
+			self.get_B = interp1d(r, B, kind="slinear", fill_value="extrapolate")
 
 			# create interpolation functions
-			self.density = interp1d(r2, n, kind="quadratic", fill_value="extrapolate")
+			self.density = interp1d(r2, n, kind="slinear", fill_value="extrapolate")
+		elif model == "custom":
+			print ("Warning: Custom model specified - need to make sure get_B and density methods are populated!")
 
 		else:
 			raise ValueError("ClusterProfile did not understand model type {}".format(model))
+
+	def beta_density(self, r):
+		exponent = -3.0 * self.beta / 2.0
+		n = self.n0 * (1 + (r/self.r0)**2) ** exponent
+		return (n)
+
+	def Bflat(self):
+		return (self.B_rms)
+
+	def nflat(self):
+		return (self.n)
 
 	def B_modA(self, r):
 		'''
@@ -96,9 +144,9 @@ class ClusterProfile:
 			r 	float
 				distance from cluster centre in kpc
 		'''
-		return (2.5e-5 * (self.density(r) / self.n0)**0.7)
+		return (self.B0 * (self.density(r) / self.n0)**self.B_exponent)
 
-	def B_modB(self, r):
+	def B_modB(self, r, B25=7.5e-6):
 		'''
 		Model B from Reynolds et al. 2020
 
@@ -106,7 +154,6 @@ class ClusterProfile:
 			r 	float
 				distance from cluster centre in kpc
 		'''
-		B25 = 7.5e-6
 		B = B25 * np.sqrt(self.density(r) / self.n25 * 100.0 / self.plasma_beta)
 		return (B)
 
@@ -119,8 +166,8 @@ class ClusterProfile:
 			r 	float
 				distance from cluster centre in kpc
 		'''
-		term1 = 3.9e-2 / (( 1.0 + (r/80.0))**1.8)
-		term2 = 4.05e-3 / ((1.0 + (r/280.0))**0.87)
+		term1 = 3.9e-2 / (( 1.0 + (r/80.0)**2)**1.8)
+		term2 = 4.05e-3 / ((1.0 + (r/280.0)**2)**0.87)
 		return (term1 + term2)
 
 	def profile(self, r):
@@ -146,8 +193,19 @@ class FieldModel:
 		self.ne = 1e-20 * np.ones_like(self.r)	# vanishing
 
 	def get_rm(self):
-		prefactor = unit.e ** 3 / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
-		integral = np.trapz(self.rcen, self.Bz)
+		prefactor = (unit.e ** 3) / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
+		prefactor = 812.0
+
+		# integrate using simpson 
+		# units are cm^-3, kpc and microgauss
+		#integral = simps(self.rcen * unit.kpc, self.ne * self.Bz * 1e6)
+		#costheta = 
+		#n_dot_Bz = 
+		integral = simps(self.rcen, self.ne * self.Bz * 1e6)
+
+		#integral = simps(self.rcen * unit.kpc, self.ne * self.Bz)
+		
+		# convert to rad / m^2 and return 
 		return (prefactor * integral)
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0):
@@ -207,10 +265,11 @@ class FieldModel:
 			else:
 				rcen += lc
 
-			r += lc
 			rcen_array.append(rcen)
 			r_array.append(r)
 			deltaL_array.append(lc)
+
+			r += lc
 
 		# now we have box sizes and radii, get the field and density in each box 
 		Ncells = len(r_array)
@@ -220,10 +279,10 @@ class FieldModel:
 
 		# draw random isotropic angles and save phi
 		theta, phi = random_angle(size = Ncells)
-		phi = phi
+		#phi = phi
 
 		# get density and magnetic field strength at centre of box
-		self.ne, Btot = self.profile(self.r)
+		self.ne, Btot = self.profile(self.rcen)
 
 		# get the x and y components and increment r
 		#Bx_array.append(B * np.sin(theta2))
@@ -233,12 +292,12 @@ class FieldModel:
 
 		# note B is actually Bperp
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
-		self.phi = np.arctan(self.Bx/self.By) 
+		self.phi = np.arctan2(self.Bx, self.By) 
 		#self.phi = phi
 
 		self.Bz = Btot * np.cos(theta) 
 		self.rm = self.get_rm()
-
+		#print (self.rm)
 
 
 
