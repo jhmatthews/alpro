@@ -49,6 +49,19 @@ def get_libanov_B(r):
 	By = (0.0102459*(x**17))-(0.0937683*(x**15)) + (0.671841*(x**13)) - (3.6406*(x**11)) + (14.2479*(x**9)) - (37.7455*(x**7)) + (61.3611*(x**5)) - (51.7231*(x**3)) + (16.9128*x)
 	return 1e-6*Bx, 1e-6*By
 
+def churasov_density(r):
+	'''
+	Density function from Churasov et al 2003
+	Given as equation (2) of Reynolds et al. 2020
+
+	Parameters:
+		r 	float
+			distance from cluster centre in kpc
+	'''
+	term1 = 3.9e-2 / (( 1.0 + (r/80.0)**2)**1.8)
+	term2 = 4.05e-3 / ((1.0 + (r/280.0)**2)**0.87)
+	return (term1 + term2)
+
 # class powerlaw:
 # 	def __init__
 
@@ -65,7 +78,7 @@ class ClusterProfile:
 		if model == "a":
 			# Model B from Reynolds+ 2020
 			self.get_B = self.B_modA 
-			self.density = self.churasov_density
+			self.density = churasov_density
 			self.n0 = self.density(0.0)
 			self.B0 = 2.5e-5
 			self.B_exponent = 0.7
@@ -73,7 +86,7 @@ class ClusterProfile:
 		elif model == "b":
 			# Model B from Reynolds+ 2020
 			self.get_B = self.B_modB 
-			self.density = self.churasov_density
+			self.density = churasov_density
 			self.n25 = self.density(25.0)
 
 		elif model == "flat":
@@ -83,14 +96,14 @@ class ClusterProfile:
 			self.B_rms = B_rms
 			self.n = n
 			self.get_B = self.Bflat
-			self.density = self.churasov_density
+			self.density = churasov_density
 
 		elif model == "murgia":
 			self.n0 = 1e-3 
 			self.r0 = 400.0 
 			self.B_exponent = 0.5
 			self.beta = 0.6
-			self.B0 = 1.0
+			self.B0 = 1e-6
 			self.density = self.beta_density
 			self.get_B = self.B_modA 
 
@@ -157,22 +170,72 @@ class ClusterProfile:
 		B = B25 * np.sqrt(self.density(r) / self.n25 * 100.0 / self.plasma_beta)
 		return (B)
 
-	def churasov_density(self, r):
-		'''
-		Density function from Churasov et al 2003
-		Given as equation (2) of Reynolds et al. 2020
-
-		Parameters:
-			r 	float
-				distance from cluster centre in kpc
-		'''
-		term1 = 3.9e-2 / (( 1.0 + (r/80.0)**2)**1.8)
-		term2 = 4.05e-3 / ((1.0 + (r/280.0)**2)**0.87)
-		return (term1 + term2)
-
 	def profile(self, r):
 		return (self.density(r), self.get_B(r))
 
+
+class ClusterFromFile:
+	def __init__(self, fname="Bfield.npy"):
+		# load the array
+		self.Bfull = np.load(fname)
+		self.N = self.Bfull.shape[0]
+		self.mid = self.N//2
+		self.density = churasov_density
+
+		if any(i != self.N for i in self.Bfull.shape[:-1]):
+			raise ValueError("File supplied must be cube shaped but has shape {}".format(self.Bfull.shape)) 
+
+	def slice(self, z, L=100.0, axis=0, sign=1, degrade=1, normalise = 1.0):
+
+		if axis == 0:
+			self.B = self.Bfull[:,self.mid,self.mid,:]
+		elif axis == 1:
+			self.B = self.Bfull[self.mid,:,self.mid,:]
+		elif axis == 2:
+			self.B = self.Bfull[self.mid,self.mid,:,:]
+
+		if sign > 0:
+			self.B = self.B[self.mid:,:]
+		else:
+			self.B = self.B[:self.mid,:]
+
+
+		self.B *= normalise
+		# take a slice along the B field
+
+		from scipy.interpolate import interp1d
+		ztrue = z
+		self.z = np.linspace(0,L,len(self.B[:,0])/degrade)
+
+		if degrade > 1:
+			# these functions will allow us to degrade the resolution using linear spline interp
+			interp_x_temp = interp1d(ztrue, self.B[:,0], kind='slinear')
+			interp_y_temp = interp1d(ztrue, self.B[:,1], kind='slinear')
+			interp_z_temp = interp1d(ztrue, self.B[:,2], kind='slinear')
+
+			self.B = np.zeros((len(self.z),3))
+
+			self.B[:,0] = interp_x_temp (self.z)
+			self.B[:,1] = interp_y_temp (self.z)
+			self.B[:,2] = interp_z_temp (self.z)
+
+		elif degrade < 1:
+			raise ValueError("degrade needs to be >= 1!")
+
+		# actual interpolation always done using 2nd order interp 
+		kind = "quadratic"
+		# kind='quadratic'
+		self.interp_x = interp1d(self.z, self.B[:,0], kind=kind)
+		self.interp_y = interp1d(self.z, self.B[:,1], kind=kind)
+
+
+	def get_B(self, z):
+		Bx = self.interp_x(z)
+		By = self.interp_y(z)
+		return (Bx, By)
+
+	def profile(self, r):
+		return (self.density(r), self.get_B(r))
 
 
 class FieldModel:
@@ -184,13 +247,16 @@ class FieldModel:
 		self.coherence_r0 = coherence_r0
 
 	def create_libanov_field(self, deltaL=1.0, Lmax=93.0):
+		'''
+		set arrays according to uniform field model of Libanox et al.
+		'''
 		self.r = np.arange(0, Lmax-deltaL, deltaL)
 		self.deltaL = np.ones_like(self.r) * deltaL
 		self.rcen = self.r + (0.5 * self.deltaL)
 		self.Bx, self.By = get_libanov_B(self.rcen)
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
 		self.phi = np.arctan(self.Bx/self.By) 
-		self.ne = 1e-20 * np.ones_like(self.r)	# vanishing
+		self.ne = 1e-20 * np.ones_like(self.r)	# vanishing density 
 
 	def get_rm(self):
 		prefactor = (unit.e ** 3) / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
@@ -207,6 +273,17 @@ class FieldModel:
 		
 		# convert to rad / m^2 and return 
 		return (prefactor * integral)
+
+	def domain_from_slice(self, Cluster, deltaL=1.0, Lmax=500.0):
+		self.r = np.arange(0, Lmax, deltaL)
+		self.deltaL = np.ones_like(self.r) * deltaL
+		self.rcen = self.r + (0.5 * self.deltaL)
+		self.Bx, self.By = Cluster.get_B(self.rcen)
+		self.B = np.sqrt(self.Bx**2 + self.By**2) 
+		self.phi = np.arctan(self.Bx/self.By) 
+		self.ne = Cluster.density(self.r)	
+		self.Bz = Btot * np.cos(theta) 
+		self.rm = self.get_rm()
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0):
 		'''
@@ -243,7 +320,6 @@ class FieldModel:
 		rcen_array, r_array = [], []
 		deltaL_array = []
 
-		# IMPROVE?
 		# wonder if there's a better way to do this?
 		while r < L:
 			# get a coherence length which will be the size of the box 
@@ -283,7 +359,7 @@ class FieldModel:
 
 		# get density and magnetic field strength at centre of box
 		self.ne, Btot = self.profile(self.rcen)
-
+  
 		# get the x and y components and increment r
 		#Bx_array.append(B * np.sin(theta2))
 		#y_array.append(B * np.cos(theta2))
@@ -292,7 +368,7 @@ class FieldModel:
 
 		# note B is actually Bperp
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
-		self.phi = np.arctan2(self.Bx, self.By) 
+		self.phi = np.arctan2(self.Bx,self.By) 
 		#self.phi = phi
 
 		self.Bz = Btot * np.cos(theta) 
