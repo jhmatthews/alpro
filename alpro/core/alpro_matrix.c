@@ -45,14 +45,6 @@ get_deltas (double Deltas[], double mass, double energy, double M, double B,
   /* now get Delta_osc */
   x = (Deltas[PL] - Deltas[AA]) * (Deltas[PL] - Deltas[AA]);
   Deltas[OSC] = sqrt (x + (4.0 * Deltas[AG] * Deltas[AG])) * UNIT_DELTA;
-
-
-  int i;
-  for (i == 0; i < NDELTAS; i++)
-  {
-    printf("Deltas %8.4e\n", Deltas[i]);
-  }
-
 }
 
 int
