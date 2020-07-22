@@ -4,32 +4,33 @@ import types, os
 from scipy.integrate import simps
 
 class units:
-    '''
-    class containing some units. Should probably use astropy units 
-    but I find them a bit annoying.
-    '''
-    def __init__(self):
-        self.kpc = 3.0857e21
-        self.pc = 3.0857e18
-        self.c = 2.997925e10
-        self.yr = 3.1556925e7
-        self.myr = 3.1556925e13
-        self.kyr = 3.1556925e10
-        self.radian = 57.29577951308232
-        self.msol = 1.989e33
-        self.mprot = 1.672661e-24
-        self.melec = 9.10938356e-28
-        self.melec_csq = self.melec * self.c * self.c
-        self.mprot_csq = self.mprot * self.c * self.c
-        self.e = 4.8032045057134676e-10     # fundamental charge 
-        self.ev = 1.602192e-12  # electron volts in CGS
-        self.kb = 1.38062e-16   # boltzmann 
-        self.h = 6.6262e-27     # plank 
-        self.hbar = self.h / np.pi / np.pi      
-        self.g = 6.670e-8       # gravitational 
-        self.hbar_c = self.hbar * self.c
-        self.alpha = self.e * self.e / self.hbar_c
-        self.thomson = 0.66524e-24
+	'''
+	class containing some units. Should probably use astropy units 
+	but I find them a bit annoying.
+	'''
+	def __init__(self):
+		self.kpc = 3.0857e21
+		self.pc = 3.0857e18
+		self.c = 2.997925e10
+		self.yr = 3.1556925e7
+		self.myr = 3.1556925e13
+		self.kyr = 3.1556925e10
+		self.radian = 57.29577951308232
+		self.msol = 1.989e33
+		self.mprot = 1.672661e-24
+		self.melec = 9.10938356e-28
+		self.melec_csq = self.melec * self.c * self.c
+		self.mprot_csq = self.mprot * self.c * self.c
+		self.e = 4.8032045057134676e-10     # fundamental charge 
+		self.kev = 1.602192e-9  # kilo electron volts in CGS
+		self.ev = 1.602192e-12  # electron volts in CGS
+		self.kb = 1.38062e-16   # boltzmann 
+		self.h = 6.6262e-27     # plank 
+		self.hbar = self.h / np.pi / np.pi      
+		self.g = 6.670e-8       # gravitational 
+		self.hbar_c = self.hbar * self.c
+		self.alpha = self.e * self.e / self.hbar_c
+		self.thomson = 0.66524e-24
 
 # class to use for units
 unit = units()
@@ -61,11 +62,6 @@ def churasov_density(r):
 	term1 = 3.9e-2 / (( 1.0 + (r/80.0)**2)**1.8)
 	term2 = 4.05e-3 / ((1.0 + (r/280.0)**2)**0.87)
 	return (term1 + term2)
-
-# class powerlaw:
-# 	def __init__
-
-# 	# def generate_random(r):
 
 class ClusterProfile:
 	'''
@@ -196,6 +192,7 @@ class ClusterFromFile:
 			# kind='quadratic'
 			self.interp_x = interp1d(self.z, self.B[:,0], kind=kind)
 			self.interp_y = interp1d(self.z, self.B[:,1], kind=kind)
+			self.interp_z = interp1d(self.z, self.B[:,2], kind=kind)
 
 
 	def slice(self, z, L=100.0, axis=0, sign=1, degrade=1, normalise = 1.0):
@@ -240,7 +237,12 @@ class ClusterFromFile:
 		# kind='quadratic'
 		self.interp_x = interp1d(self.z, self.B[:,0], kind=kind)
 		self.interp_y = interp1d(self.z, self.B[:,1], kind=kind)
+		self.interp_z = interp1d(self.z, self.B[:,2], kind=kind)
 
+
+	def get_Bz(self, z):
+		Bz = self.interp_z(z)
+		return (Bz)
 
 	def get_B(self, z):
 		Bx = self.interp_x(z)
@@ -258,6 +260,7 @@ class FieldModel:
 		# coherence_r0 scales the coherence lengths with radius 
 		# by a factor of (1 + r/coherence_r0), in kpc
 		self.coherence_r0 = coherence_r0
+		self.Bz = 1.0
 
 	def create_libanov_field(self, deltaL=1.0, Lmax=93.0):
 		'''
@@ -281,6 +284,7 @@ class FieldModel:
 		#costheta = 
 		#n_dot_Bz = 
 		integral = simps(self.rcen, self.ne * self.Bz * 1e6)
+		# ntegral = 1.0
 
 		#integral = simps(self.rcen * unit.kpc, self.ne * self.Bz)
 		
@@ -292,11 +296,10 @@ class FieldModel:
 		self.deltaL = np.ones_like(self.r) * deltaL
 		self.rcen = self.r + (0.5 * self.deltaL)
 		self.Bx, self.By = Cluster.get_B(self.rcen)
+		self.Bz = Cluster.get_Bz(self.rcen)
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
 		self.phi = np.arctan(self.Bx/self.By) 
-		self.ne = Cluster.density(self.r)
-
-		# self.Bz = Btot * np.cos(theta) 
+		self.ne = Cluster.density(self.r) 
 		#self.rm = self.get_rm()
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0):
@@ -382,7 +385,7 @@ class FieldModel:
 
 		# note B is actually Bperp
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
-		self.phi = np.arctan(self.By/self.Bx) 
+		self.phi = np.arctan(self.Bx/self.By) 
 		#self.phi = phi
 
 		self.Bz = Btot * np.cos(theta) 

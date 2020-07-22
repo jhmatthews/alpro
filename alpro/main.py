@@ -2,7 +2,6 @@ import alpro.models as models
 #import powerlaw
 import numpy as np 
 import alpro
-import matplotlib
 import alpro.util as util 
 
 class Survival:
