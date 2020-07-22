@@ -175,15 +175,28 @@ class ClusterProfile:
 
 
 class ClusterFromFile:
-	def __init__(self, fname="Bfield.npy"):
+	def __init__(self, fname="Bfield.npy", model_type="cube"):
 		# load the array
 		self.Bfull = np.load(fname)
 		self.N = self.Bfull.shape[0]
 		self.mid = self.N//2
 		self.density = churasov_density
 
-		if any(i != self.N for i in self.Bfull.shape[:-1]):
-			raise ValueError("File supplied must be cube shaped but has shape {}".format(self.Bfull.shape)) 
+		if model_type == "cube":
+			if any(i != self.N for i in self.Bfull.shape[:-1]):
+				raise ValueError("File supplied must be cube shaped but has shape {}".format(self.Bfull.shape)) 
+		elif model_type == "1d":
+			self.z = self.Bfull[0,:]
+			self.B = np.transpose(self.Bfull[1:,:])
+			interp_x_temp = interp1d(self.z, self.B[:,0], kind='slinear')
+			interp_y_temp = interp1d(self.z, self.B[:,1], kind='slinear')
+			interp_z_temp = interp1d(self.z, self.B[:,2], kind='slinear')
+			# actual interpolation always done using 2nd order interp 
+			kind = "quadratic"
+			# kind='quadratic'
+			self.interp_x = interp1d(self.z, self.B[:,0], kind=kind)
+			self.interp_y = interp1d(self.z, self.B[:,1], kind=kind)
+
 
 	def slice(self, z, L=100.0, axis=0, sign=1, degrade=1, normalise = 1.0):
 
@@ -250,7 +263,7 @@ class FieldModel:
 		'''
 		set arrays according to uniform field model of Libanox et al.
 		'''
-		self.r = np.arange(0, Lmax-deltaL, deltaL)
+		self.r = np.arange(0, Lmax, deltaL)
 		self.deltaL = np.ones_like(self.r) * deltaL
 		self.rcen = self.r + (0.5 * self.deltaL)
 		self.Bx, self.By = get_libanov_B(self.rcen)
@@ -281,9 +294,10 @@ class FieldModel:
 		self.Bx, self.By = Cluster.get_B(self.rcen)
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
 		self.phi = np.arctan(self.Bx/self.By) 
-		self.ne = Cluster.density(self.r)	
-		self.Bz = Btot * np.cos(theta) 
-		self.rm = self.get_rm()
+		self.ne = Cluster.density(self.r)
+
+		# self.Bz = Btot * np.cos(theta) 
+		#self.rm = self.get_rm()
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0):
 		'''
