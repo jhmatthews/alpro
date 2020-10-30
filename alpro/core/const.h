@@ -25,3 +25,4 @@
 #define UNIT_MASS   				5.6095363761802584e+32
 #define UNIT_GAUSS  				0.01953548032
 #define UNIT_DELTA					1
+#define SIM_UNITS 					1

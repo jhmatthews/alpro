@@ -35,18 +35,19 @@ get_P (PyObject * self, PyObject * args)
     return NULL;
 
   /* B should be given in Gauss, so convert to natural units */
-  B *= UNIT_GAUSS;
+  B *= UNIT_GAUSS * SIM_UNITS * SIM_UNITS;
 
   /* L kpc, converted to natural units */
-  distance = L * 1000.0 * const_PC * UNIT_LENGTH;
+  distance = L * 1000.0 * const_PC * UNIT_LENGTH / SIM_UNITS;
 
   /* coupling constant in units used by De Angelis et al. */
-  M = 1.0 / g_a;
+  M = 1.0 / g_a * SIM_UNITS;
+  mass *= SIM_UNITS;
 
   /* set plasma frequency for electron density ne */
   omega_pl =
     sqrt (4.0 * const_PI * const_ECHARGE * const_ECHARGE * ne /
-	  const_MELEC) * const_HBAR_EV;
+	  const_MELEC) * const_HBAR_EV * SIM_UNITS;
 
   /*  output arrays to match the input arrays */
   out_array = PyArray_NewLikeArray (in_array, NPY_ANYORDER, NULL, 0);
@@ -109,7 +110,7 @@ get_P (PyObject * self, PyObject * args)
       phi = phis[ienergy];
 
       /* do the propagation through one domain */
-      PropagateOne (A_new, mass, energy, M, B, omega_pl, phi, distance,
+      PropagateOne (A_new, mass, energy * SIM_UNITS, M, B, omega_pl, phi, distance,
 		    A_temp);
 
       /* copy probabilities to output array */
@@ -180,7 +181,7 @@ PropagateOne (gsl_vector_complex * A_new, double mass, double energy,
   /* alternative approach commented out */
   //get_T_matrices2 (EVarray, Deltas, &T1, &T2, &T3);
 
-
+  distance = distance * UNIT_DELTA;
   /* construct the transfer matrix for the idealised parallel situation */
   get_U0 (U0, EVarray, &T1.matrix, &T2.matrix, &T3.matrix, distance);
 
