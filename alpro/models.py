@@ -192,6 +192,16 @@ class FieldModel:
 		self.phi = np.arctan(self.Bx/self.By) 
 		self.ne = 1e-20 * np.ones_like(self.r)	# vanishing
 
+	def uniform_field_z(self, deltaL=1.0, Lmax=1800.0):
+		self.r = np.arange(0, Lmax-deltaL, deltaL)
+		self.deltaL = np.ones_like(self.r) * deltaL
+		self.rcen = self.r + (0.5 * self.deltaL)
+		self.Bx, self.By = 0.0, 0.0
+		self.ne, self.Bz = self.profile(self.rcen)
+		self.B = np.sqrt(self.Bx**2 + self.By**2) 
+		self.phi = np.zeros_like(self.Bx)
+
+
 	def get_rm(self):
 		prefactor = (unit.e ** 3) / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
 		prefactor = 812.0
