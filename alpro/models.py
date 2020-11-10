@@ -44,11 +44,46 @@ def random_angle(size=None):
 	theta = np.arccos(costheta)
 	return (theta, phi)
 
-def get_libanov_B(r):
+def fterm(r, C, alpha):
+	term1 = -alpha * np.cos(alpha * r)
+	term2 = np.sin(alpha * r) / r
+	F0 = C * alpha * alpha * (alpha * np.cos(alpha) - np.sin(alpha))
+	term3 = F0 * r * r / alpha / alpha
+	f = C * (term1 + term2) + term3
+	return f
+
+def fprime(r, C, alpha):
+	term1 = alpha * alpha * np.sin(alpha * r)
+	term2 = (alpha * np.cos(alpha * r) / r) - (np.sin(alpha * r) / r / r)
+	F0 = C * alpha * alpha * (alpha * np.cos(alpha) - np.sin(alpha))
+	term3 = 2.0 * F0 * r / alpha / alpha
+	f = C * (term1 + term2) + term3
+	return f
+    
+
+def libanov_Br(r, alpha=5.76, theta=np.pi/4.0, C=6e-8):
+	f =fterm(r, C, alpha)
+	Br = 2.0 * np.cos(theta) * f / r / r
+	return (-Br)
+
+def get_libanov_B(r, theta=np.pi/4, Rcavity=93.0, alpha=5.76, C=6e-8):
+    rnorm = r/Rcavity
+    fr = fterm(rnorm, C, alpha)
+    Br = 2.0 * np.cos(theta) * fr / rnorm / rnorm
+    Btheta = -np.sin(theta) * fprime(rnorm, C, alpha) / rnorm
+    Bphi = alpha * np.sin(theta) * fr / rnorm
+    return (Br, Btheta, Bphi)
+
+def get_libanov_B_old(r, include_radial=True):
 	x = r/(93.0)
 	Bx = (0.00312443*(x**18)) - (0.0319991*(x**16)) + (0.260311*(x**14)) - (1.63197*(x**12)) + (7.58002*(x**10)) - (24.721*(x**8)) + (52.3929*(x**6)) - (63.8794*(x**4)) + (35.8973*(x**2)) - 5.86899	
 	By = (0.0102459*(x**17))-(0.0937683*(x**15)) + (0.671841*(x**13)) - (3.6406*(x**11)) + (14.2479*(x**9)) - (37.7455*(x**7)) + (61.3611*(x**5)) - (51.7231*(x**3)) + (16.9128*x)
-	return 1e-6*Bx, 1e-6*By
+	
+	if include_radial:
+		Bz = libanov_Br(x)
+		return 1e-6*Bx, 1e-6*By, Bz
+	else:
+		return 1e-6*Bx, 1e-6*By
 
 def churasov_density(r):
 	'''
@@ -262,17 +297,22 @@ class FieldModel:
 		self.coherence_r0 = coherence_r0
 		self.Bz = 1.0
 
-	def create_libanov_field(self, deltaL=1.0, Lmax=93.0):
+	def create_libanov_field(self, deltaL=1.0, Lmax=93.0, density=None, theta=np.pi/4.0):
 		'''
 		set arrays according to uniform field model of Libanox et al.
 		'''
 		self.r = np.arange(0, Lmax, deltaL)
 		self.deltaL = np.ones_like(self.r) * deltaL
 		self.rcen = self.r + (0.5 * self.deltaL)
-		self.Bx, self.By = get_libanov_B(self.rcen)
+		self.Bx, self.By, self.Bz = get_libanov_B(self.rcen, theta=theta)
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
 		self.phi = np.arctan(self.Bx/self.By) 
-		self.ne = 1e-20 * np.ones_like(self.r)	# vanishing density 
+		
+		if density == None:
+			self.ne = 1e-20 * np.ones_like(self.r)	# vanishing density 
+		elif density == "churasov":
+			self.ne = churasov_density(self.r)
+		#self.rm = self.get_rm()
 
 	def uniform_field_z(self, deltaL=1.0, Lmax=1800.0):
 		self.r = np.arange(0, Lmax-deltaL, deltaL)

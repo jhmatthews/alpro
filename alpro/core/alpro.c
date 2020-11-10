@@ -137,9 +137,14 @@ get_P (PyObject * self, PyObject * args)
   gsl_vector_complex_free (A_new);
   NpyIter_Deallocate (in_iter);
   NpyIter_Deallocate (out_iter);
-  Py_INCREF (out_array);
-  Py_INCREF (Aout_array);
-  return Py_BuildValue("OO", out_array, Aout_array);
+  //Py_INCREF (out_array);
+  //Py_INCREF (Aout_array);
+  free (A_temp);
+  /*  clean up and return the result */
+  PyObject* result = Py_BuildValue("OO", out_array, Aout_array);
+  Py_DECREF (out_array);
+  Py_DECREF (Aout_array);
+  return result;
 
   /*  in case bad things happen */
 fail:
