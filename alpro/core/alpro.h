@@ -7,8 +7,6 @@
 #include <math.h>
 // #include "prototypes.h"
 #include "const.h"
-#include <Python.h>
-#include <numpy/arrayobject.h>
 
 
 /*gsl matrix solver header files */

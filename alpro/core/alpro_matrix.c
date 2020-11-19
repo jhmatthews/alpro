@@ -25,6 +25,7 @@ get_U0 (gsl_matrix_complex * U0_new, double EVarray[3],
   gsl_matrix_complex_scale (T2, EVexp2);
   gsl_matrix_complex_scale (T3, EVexp3);
 
+
   /* add the terms together and copy into the new matrix */
   /* note that after this process T1 T2 and T3 have been messed with! */
   gsl_matrix_complex_add (T1, T2);
@@ -259,17 +260,6 @@ apply_rotation_matrix (double phi, gsl_matrix_complex * U0)
   gsl_matrix_complex_free (v_transpose);
 
   return 0;
-}
-
-/* Create 1D Carray from PyArray
-   Assumes PyArray is contiguous in memory. Credit Lou Pecora     */
-double *
-pyvector_to_Carrayptrs (PyArrayObject * arrayin)
-{
-  int i, n;
-
-  n = arrayin->dimensions[0];
-  return (double *) arrayin->data;	/* pointer to arrayin data as double */
 }
 
 
