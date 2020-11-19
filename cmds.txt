@@ -1,0 +1,3 @@
+python3 -m sysconfig
+-Wno-unused-result -Wsign-compare -Wunreachable-code -fno-common -dynamic -DNDEBUG -g -fwrapv -O3 -Wall -arch x86_64 -g
+gcc-10 -I/Users/matthews/winds/python/include/ -O3 -L/Users/matthews/winds/python/lib/ -lm -lgsl -lgslcblas alpro.c alpro_matrix.c -Wno-unused-result -Wsign-compare -Wunreachable-code -fno-common -dynamic -DNDEBUG -g -fwrapv -O3 -Wall -arch x86_64 -g
