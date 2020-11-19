@@ -72,7 +72,7 @@ def get_libanov_B(r, theta=np.pi/4, Rcavity=93.0, alpha=5.76, C=6e-8):
     Br = 2.0 * np.cos(theta) * fr / rnorm / rnorm
     Btheta = -np.sin(theta) * fprime(rnorm, C, alpha) / rnorm
     Bphi = alpha * np.sin(theta) * fr / rnorm
-    return (Br, Btheta, Bphi)
+    return (Btheta, Bphi, Br)
 
 def get_libanov_B_old(r, include_radial=True):
 	x = r/(93.0)
@@ -390,8 +390,8 @@ class FieldModel:
 				lc *= (1.0 + (r/(self.coherence_r0)))
 
 			# ensure the simulation is truncated at distance L
-			#if (r + lc) > L:
-			#	lc = (L-r) + 1e-10
+			if (r + lc) > L:
+				lc = (L-r) + 1e-10
 
 			if rcen == r0:
 				rcen += lc / 2.0

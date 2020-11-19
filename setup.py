@@ -1,6 +1,8 @@
 from distutils.core import setup, Extension
 import numpy
+import os
 
+os.environ["CC"] = "gcc-10"
 libraries = ['m', 'gsl', 'gslcblas']
 
 # IMPROVE this should be a symbolic link / or an env variable

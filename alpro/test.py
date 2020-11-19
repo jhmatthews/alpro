@@ -52,7 +52,6 @@ def get_prediction(energy, mass, M, omega_pl, B, distance, norm=1):
 
 
 class RunTest(unittest.TestCase):
-
     def analytic_test(self):
         # Initial state {0,1,0}
         Ainit = np.zeros( (len(energy),6))
@@ -105,99 +104,19 @@ class RunTest(unittest.TestCase):
         s.set_params(g, mass)
         s.domain.rm = 0.0
         P = 1.0 - s.get_curve(energies_m, 1.0, 93.0, r0=0.0)
-
         frac_error = (P - P_m) / P
         self.assertTrue (frac_error.all() < 1e-6)
 
         
-
+# def run_test():
+#     print ("Testing ALPRO")
+#     print ("Location: {}".format(alpro.__file__))
+#     unittest.main()
        
 
-
-
-
-
-
-
-# import matplotlib.pyplot as plt 
-# import numpy as np 
-# import constants as c
-# import alpro 
-# alpro.util.set_default_plot_params()
-# # now we're going to test against Jamie Davies' code.
-# s1 = s = alpro.Survival("davies")
-# s1.domain = alpro.models.FieldModel(None)
-# mass = 1e-8
-# g = 1e-11 * 1e-9
-# s1.set_params(g, mass)
-
-# r, B, phi, ne = np.genfromtxt("ClusterField.txt", unpack=True)
-# last_index =-10
-# s1.domain.ne = ne
-# s1.domain.phi = phi
-# r = np.append(r, 500)
-# # s1.domain.r=r[:-1]
-# s1.domain.r = 0.5 * (r[1:] + r[:-1])
-# s1.domain.B = B * 1e-6
-# #s1.domain.deltaL = 0.111111111111 * np.ones_like(s1.domain.r)
-# #r = np.linspace(0,500,num=4500)
-# s1.domain.deltaL = r[1:] - r[:-1] 
-
-# energies, P_jamie = np.genfromtxt('noqedorcmb_james_test_m10_g1e11_pggs.txt', unpack=True)
-# energies2 = np.logspace(9,14,1000)
-# P, Prad = s1.propagate(s1.domain, energies2)
-
-# plt.plot(energies, P_jamie, label="JD code")
-# plt.plot(energies2, 1.0 - P, label="JM code", ls="--")
-# plt.semilogx()
-# plt.semilogy()
-# plt.xlim(1e9,1e10)
-# plt.legend()
-# plt.xlabel("$E$ (eV)", fontsize=16)
-# plt.ylabel("$P_{\gamma->\gamma}$", fontsize=16)
-# plt.savefig("test.png", dpi=200)
-
-
-# # In[8]:
-
-
-# energies, P_jamie = np.genfromtxt('james_field_mm13_gm12p3_pggs.txt', unpack=True)
-# plt.plot(energies, P_jamie, label="JD code", ls="-")
-
-# energies = np.logspace(3,4,10000)
-# # now we're going to test against Jamie Davies' code.
-# s1 = s = alpro.Survival("davies")
-# s1.domain = alpro.models.FieldModel(None)
-
-# logg = 12.3
-# logm = 13
-# mass = (10.0**-logm)
-# g = (10.0**-logg) * 1e-9
-# s1.set_params(g, mass)
-
-# r1, r2, Bx, By, ne = np.genfromtxt("domain_seed_100_1275b.dat", unpack=True)
-# s1.domain.ne = ne 
-# s1.domain.phi = np.arctan(By/Bx) 
-# B = np.sqrt(Bx * Bx + By * By) 
-# s1.domain.r = r2
-# s1.domain.B = B 
-# s1.domain.deltaL = (r2 - r1) 
-
-# P, Prad = s1.propagate(s1.domain, energies)
-# p_to_plot = 1.0 - P
-
-# plt.plot(energies, p_to_plot, label="JM code", ls="--")
-# plt.semilogx()
-# plt.semilogy()
-# plt.xlim(1e3,1e4)
-# plt.xlabel("$E$ (eV)", fontsize=16)
-# plt.ylabel("$P_{\gamma->\gamma}$", fontsize=16)
-# plt.savefig("test_1275.png", dpi=200)
-
-
-# # In[ ]:
-
 if __name__ == '__main__':
+    print ("Testing ALPRO")
+    print ("Location: {}".format(alpro.__file__))
     unittest.main()
 
 
