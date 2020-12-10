@@ -26,11 +26,14 @@ class units:
 		self.ev = 1.602192e-12  # electron volts in CGS
 		self.kb = 1.38062e-16   # boltzmann 
 		self.h = 6.6262e-27     # plank 
-		self.hbar = self.h / np.pi / np.pi      
+		self.hbar = self.h / np.pi / np.pi 
+		self.hbar_ev = 6.582119569e-16     
 		self.g = 6.670e-8       # gravitational 
 		self.hbar_c = self.hbar * self.c
 		self.alpha = self.e * self.e / self.hbar_c
 		self.thomson = 0.66524e-24
+		self.unit_gauss_natural = 0.01953548032
+		self.unit_length_natural = 50676.79373667135
 
 # class to use for units
 unit = units()
@@ -341,6 +344,24 @@ class FieldModel:
 		self.phi = np.arctan(self.Bx/self.By) 
 		self.ne = Cluster.density(self.r) 
 		#self.rm = self.get_rm()
+
+	def resample_box(self, new_redge, interp1d_kwargs={"kind": "quadratic", "fill_value": "extrapolate"}):
+		'''
+		this must be called after the Bx, By, r arrays are already populated
+		'''
+		interp_x = interp1d(self.rcen, self.Bx, **interp1d_kwargs)
+		interp_y = interp1d(self.rcen, self.By, **interp1d_kwargs)
+
+		# populate new values 
+		self.rcen = 0.5 * (new_redge[1:] + new_redge[:-1])
+		self.Bx = interp_x(self.rcen)
+		self.By = interp_y(self.rcen)
+		self.r = new_redge[:-1]
+		self.deltaL = new_redge[1:] - new_redge[:-1]
+		self.B = np.sqrt(self.Bx**2  + self.By **2)
+		self.phi = np.arctan(self.Bx/self.By) 
+		self.ne, _ = self.profile(self.rcen)
+
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0):
 		'''
