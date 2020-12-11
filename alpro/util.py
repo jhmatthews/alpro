@@ -1,5 +1,6 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
+from alpro.models import unit
 
 class my_powerlaw:
 	'''
@@ -80,6 +81,56 @@ class modelb_powerlaw:
 		term2 = (1. - z) * (self.xmin ** self.alpha)
 		rv = (term1 + term2) ** (1.0 / self.alpha)
 		return (rv)
+
+def delta_eff(energy, ne, mass):
+	r'''
+	Calculate delta_eff for a B field in Gauss, a mass in eV and a photon energy in eV
+	$$
+	\Delta_{\rm eff} = \frac{m_A^2 - \omega_p^2}{4 \omega}
+	$$
+	'''
+	omega_p = np.sqrt (4.0 * np.pi * unit.e * unit.e * ne / unit.melec) * unit.hbar_ev;
+	delta = ((mass * mass) - (omega_p * omega_p)) / 4.0 / energy
+	return (delta)
+
+def theta(energy, B, ne, mass, g_a):
+	r'''
+	Calculate delta_eff for a B field in Gauss, a mass in eV and a photon energy in eV
+	$$
+	\Theta = \frac{2 B_\perp \omega g_a}{m_A^2 - \omega_p^2}.
+	$$
+	'''
+	B *= unit.unit_gauss_natural
+	omega_p = np.sqrt (4.0 * np.pi * unit.e * unit.e * ne /
+	  unit.melec) * unit.hbar_ev;
+	theta = 2.0 * B * energy * g_a 
+	m_effsq = (mass * mass) - (omega_p * omega_p)
+	#print (mass, omega_p)
+	theta /= m_effsq
+	return (theta)
+
+def Losc(energy, B, ne, mass, g_a):
+	'''
+	calculate the ALP oscillation length in cm
+	'''
+	delta = delta_eff(energy, ne, mass)
+	th = theta(energy, B, ne, mass, g_a)
+	L = 2.0 * np.pi / (delta * np.sqrt(1.0 + th**2)) / unit.unit_length_natural / unit.kpc
+	return (L)
+
+def P_gamma_analytic(energy, B, ne, mass, g_a, L):
+	'''
+	L should be in kpc!
+	ne, B in CGS
+	everything else in eV or 1/eV
+	'''
+	delta = delta_eff(energy, ne, mass)
+	th = theta(energy, B, ne, mass, g_a)
+	phase = delta * np.sqrt(1.0 + th**2) * L * unit.kpc * unit.unit_length_natural
+	amplitude = th**2 / (1.0 + th**2)
+	sin_term = np.sin(phase)
+	return (amplitude * sin_term * sin_term)
+
 
 
 def set_default_plot_params(tex=False, dpi=300):

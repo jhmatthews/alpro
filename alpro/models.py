@@ -26,11 +26,14 @@ class units:
 		self.ev = 1.602192e-12  # electron volts in CGS
 		self.kb = 1.38062e-16   # boltzmann 
 		self.h = 6.6262e-27     # plank 
-		self.hbar = self.h / np.pi / np.pi      
+		self.hbar = self.h / np.pi / np.pi 
+		self.hbar_ev = 6.582119569e-16     
 		self.g = 6.670e-8       # gravitational 
 		self.hbar_c = self.hbar * self.c
 		self.alpha = self.e * self.e / self.hbar_c
 		self.thomson = 0.66524e-24
+		self.unit_gauss_natural = 0.01953548032
+		self.unit_length_natural = 50676.79373667135
 
 # class to use for units
 unit = units()
@@ -72,7 +75,7 @@ def get_libanov_B(r, theta=np.pi/4, Rcavity=93.0, alpha=5.76, C=6e-8):
     Br = 2.0 * np.cos(theta) * fr / rnorm / rnorm
     Btheta = -np.sin(theta) * fprime(rnorm, C, alpha) / rnorm
     Bphi = alpha * np.sin(theta) * fr / rnorm
-    return (Br, Btheta, Bphi)
+    return (Btheta, Bphi, Br)
 
 def get_libanov_B_old(r, include_radial=True):
 	x = r/(93.0)
@@ -352,6 +355,24 @@ class FieldModel:
 		self.ne = Cluster.density(self.r) 
 		#self.rm = self.get_rm()
 
+	def resample_box(self, new_redge, interp1d_kwargs={"kind": "quadratic", "fill_value": "extrapolate"}):
+		'''
+		this must be called after the Bx, By, r arrays are already populated
+		'''
+		interp_x = interp1d(self.rcen, self.Bx, **interp1d_kwargs)
+		interp_y = interp1d(self.rcen, self.By, **interp1d_kwargs)
+
+		# populate new values 
+		self.rcen = 0.5 * (new_redge[1:] + new_redge[:-1])
+		self.Bx = interp_x(self.rcen)
+		self.By = interp_y(self.rcen)
+		self.r = new_redge[:-1]
+		self.deltaL = new_redge[1:] - new_redge[:-1]
+		self.B = np.sqrt(self.Bx**2  + self.By **2)
+		self.phi = np.arctan(self.Bx/self.By) 
+		self.ne, _ = self.profile(self.rcen)
+
+
 	def create_box_array(self, L, random_seed, coherence, r0=10.0):
 		'''
 		create an array of random magnetic field boxes by drawing
@@ -400,8 +421,8 @@ class FieldModel:
 				lc *= (1.0 + (r/(self.coherence_r0)))
 
 			# ensure the simulation is truncated at distance L
-			#if (r + lc) > L:
-			#	lc = (L-r) + 1e-10
+			if (r + lc) > L:
+				lc = (L-r) + 1e-10
 
 			if rcen == r0:
 				rcen += lc / 2.0
