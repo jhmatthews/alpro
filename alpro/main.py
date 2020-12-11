@@ -31,11 +31,11 @@ class Survival:
 			self.coherence_func = pl.rvs
 
 		if implementation == "c":
-			self.get_P = alpro.get_P 
+			self.get_P = alpro.core.get_P 
 		elif implementation == "python":
 			self.get_P = alpro.pure.get_P
 		elif implementation == "numba":
-			self.get_P = alpro.get_P2
+			self.get_P = alpro.get_P
 
 	def init_model(self, lcorr=None):
 		if self.coherence_func == None:

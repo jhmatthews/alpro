@@ -9,7 +9,7 @@ PARSEC = 3.0857e18
 E = 4.8032045057134676e-10
 
 @jit(nopython=True)      
-def get_P2(energies, Ainit, phi, B, L, g_a, mass, ne):
+def get_P(energies, Ainit, phi, B, L, g_a, mass, ne):
     M = 1.0 / g_a 
     omega_pl = np.sqrt(4.0 * np.pi * E * E * ne / MELEC) * HBAR_EV
     distance = L * 1000.0 * PARSEC * UNIT_LENGTH
@@ -77,10 +77,10 @@ def apply_rotation_matrix (phi, U0):
     v[1,0] = np.sin (phi) + 0j
     v[1,1] = np.cos (phi) + 0j
     v[2,2] = 1.0+0j
-    vt = v.T
+    vt = np.transpose(v)
 
-    answer = np.dot(U0,v)
-    answer = np.dot(vt,U0)
+    answer1 = np.dot(U0,v)
+    answer = np.dot(vt,answer1)
 
     return (answer)
 
