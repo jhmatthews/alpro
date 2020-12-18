@@ -141,41 +141,66 @@ class ClusterProfile:
 			self.density = self.beta_density
 			self.get_B = self.B_modA 
 
-
 		elif model == "russell":
-			# Russell+ 2010 paper on 1821
-			# read the data, which should be in data subfolder 
-			folder = os.path.dirname(__file__)
-			filename = "{}/data/russell-pressure.dat".format(folder)
-			r, P = np.genfromtxt(filename, unpack=True)
+			self.n0 = 2.63 
+			self.pl_alpha = 1.16 
+			self.P0 = 1.85e-9
+			self.r_bend = 511.0
+			self.a_low = 0.47 
+			self.a_high = 2.54 
+			self.density = self.pl_density
+			self.get_B = self.BendingPL_B
 
-			filename = "{}/data/russell-density.dat".format(folder)
-			r2, n = np.genfromtxt(filename, unpack=True)
 
-			# convert from Pascals_to_dynes
-			P *= 10.0
 
-			# get magnetic field from pressure 
-			B = np.sqrt(8.0 * np.pi * P / plasma_beta)
+		# elif model == "russell":
+		# 	# Russell+ 2010 paper on 1821
+		# 	# read the data, which should be in data subfolder 
+		# 	folder = os.path.dirname(__file__)
+		# 	filename = "{}/data/russell-pressure.dat".format(folder)
+		# 	r, P = np.genfromtxt(filename, unpack=True)
 
-			#kT = t_keV * unit.ev * 1000.0
-			#n = P / kT
+		# 	filename = "{}/data/russell-density.dat".format(folder)
+		# 	r2, n = np.genfromtxt(filename, unpack=True)
 
-			# create interpolation functions
-			self.get_B = interp1d(r, B, kind="slinear", fill_value="extrapolate")
+		# 	# convert from Pascals_to_dynes
+		# 	#P *= 10.0
 
-			# create interpolation functions
-			self.density = interp1d(r2, n, kind="slinear", fill_value="extrapolate")
+		# 	# get magnetic field from pressure 
+		# 	B = np.sqrt(8.0 * np.pi * P / plasma_beta)
+
+		# 	#kT = t_keV * unit.ev * 1000.0
+		# 	#n = P / kT
+
+		# 	# create interpolation functions
+		# 	self.get_B = interp1d(r, B, kind="slinear", fill_value="extrapolate")
+
+		# 	# create interpolation functions
+		# 	self.density = interp1d(r2, n, kind="slinear", fill_value="extrapolate")
 		elif model == "custom":
 			print ("Warning: Custom model specified - need to make sure get_B and density methods are populated!")
 
 		else:
 			raise ValueError("ClusterProfile did not understand model type {}".format(model))
 
+	def churasov_density(self, r):
+		return (churasov_density(r))
+
 	def beta_density(self, r):
 		exponent = -3.0 * self.beta / 2.0
 		n = self.n0 * (1 + (r/self.r0)**2) ** exponent
 		return (n)
+
+	def pl_density(self, r):
+		return (self.n0 * (r ** -self.pl_alpha))
+
+	def BendingPL_B(self, r):
+		numer = r**-self.a_low
+		denom = 1 + (r/self.r_bend)**(self.a_high-self.a_low)
+		P = self.P0 * (numer/denom) 
+		B = np.sqrt(P * 4.0 * np.pi / self.plasma_beta)
+		return B
+
 
 	def Bflat(self):
 		return (self.B_rms)
@@ -373,7 +398,7 @@ class FieldModel:
 		self.ne, _ = self.profile(self.rcen)
 
 
-	def create_box_array(self, L, random_seed, coherence, r0=10.0):
+	def create_box_array(self, L, random_seed, coherence, r0=10.0, cell_centered=True):
 		'''
 		create an array of random magnetic field boxes by drawing
 		random angles and box sizes from coherence_func. 
@@ -446,7 +471,11 @@ class FieldModel:
 		#phi = phi
 
 		# get density and magnetic field strength at centre of box
-		self.ne, Btot = self.profile(self.r)
+		if cell_centered: 
+			rprofile = self.r 
+		else:
+			rprofile = self.rcen
+		self.ne, Btot = self.profile(rprofile)
   
 		# get the x and y components and increment r
 		#Bx_array.append(B * np.sin(theta2))

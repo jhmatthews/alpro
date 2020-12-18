@@ -5,6 +5,7 @@ import alpro
 import unittest
 import os
 import matplotlib.pyplot as plt 
+from datetime import date
 
 #this our energy array in units of eV
 energy = np.logspace(5,7,100000)
@@ -14,7 +15,15 @@ mass = 1e-13        # 1e-12 eV
 L = 10.0            # 10 kpc
 ne = 100            # 1 particle cm^-3 (sets plasma frequency)
 
+
+
 class RunTest(unittest.TestCase):
+
+    def make_plot(self, energy, P1, P2, subplot=221):
+        plt.subplot(subplot)
+        plt.plot(energy, P2, ls="-")
+        plt.plot(energy, P1, ls="--")
+        plt.semilogx()
 
     def test_analytic(self):
         # Initial state {0,1,0}
@@ -31,6 +40,8 @@ class RunTest(unittest.TestCase):
         # compare 
         frac_error = (prediction - P) / P
         self.assertTrue (np.all(frac_error < 1e-6))
+
+        self.make_plot(energy, prediction, P, subplot=221)
 
     def test_discretise(self):
         # re-initialise 
@@ -52,6 +63,7 @@ class RunTest(unittest.TestCase):
 
         frac_error = np.fabs((P2 - P1) / P1)
         self.assertTrue (np.all(frac_error < 1e-6))
+        self.make_plot(energy, P2, P1, subplot=222)
 
     def test_marsh(self):
 
@@ -71,12 +83,17 @@ class RunTest(unittest.TestCase):
         frac_error = np.fabs((P - P_m) / P)
         print ("Marsh test, max frac error:", np.max(frac_error))
         self.assertTrue (np.all(frac_error< 0.01))
+        self.make_plot(energies_m, P_m, P, subplot=223)
+
+    def test_save(self):
+        plt.savefig("Test_{}.png".format(date.today().strftime("%d-%m-%Y")))
 
 
 if __name__ == '__main__':
     print ("Testing ALPRO")
     print ("Location: {}".format(alpro.__file__))
     unittest.main()
+    #plt.savefig("Test_{}.png".format(date.today().strftime("%d-%m-%Y")))
 
 
 

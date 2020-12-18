@@ -112,6 +112,7 @@ def get_deltas (mass, energy, M, B, omega_pl):
     # now get Delta_osc 
     x = (Deltas[0] - Deltas[1]) * (Deltas[0] - Deltas[1])
     Deltas[3] = np.sqrt (x + (4.0 * Deltas[2] * Deltas[2]))
+    #print ("DELTAS", Deltas)
     return (Deltas)
 
 @jit(nopython=True) 

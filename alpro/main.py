@@ -19,16 +19,19 @@ class Survival:
 			self.cluster = models.ClusterProfile(model="russell")
 			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
 			self.coherence_func = pl.rvs
+			self.coherence_r0 = None
 
 		elif self.model == "1275a":
 			self.cluster = models.ClusterProfile(model="a")
 			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
 			self.coherence_func = pl.rvs
+			self.coherence_r0 = None
 
 		elif self.model == "1275b":
 			self.cluster = models.ClusterProfile(model="b")
 			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
 			self.coherence_func = pl.rvs
+			self.set_coherence_r0(50.0)
 
 		if implementation == "c":
 			self.get_P = alpro.core.get_P 
@@ -37,36 +40,42 @@ class Survival:
 		elif implementation == "numba":
 			self.get_P = alpro.get_P
 
+	def set_coherence_r0(self, r0):
+		# this allows for variation of coherence length with radius in model B
+		self.coherence_r0 = r0
+
+	def set_churasov_density(self):
+		'''
+		manually override a density or B field function to churasov
+		'''
+		self.cluster.density = self.cluster.churasov_density
+
 	def init_model(self, lcorr=None):
 		if self.coherence_func == None:
 			self.coherence_func = lcorr
 
-		# this allows for variation of coherence length with radius in model B
-		if self.model == "1275b":
-			coh_r0 = 50.0
-		else:
-			coh_r0 = None
-
 		if self.model == "libanov":
 			self.domain = models.FieldModel(profile=None)
 		else:
-			self.domain = models.FieldModel(profile=self.cluster.profile, coherence_r0 = coh_r0)
+			self.domain = models.FieldModel(profile=self.cluster.profile, coherence_r0=self.coherence_r0)
 
-	def get_curve(self, energies, random_seed, L, r0=10.0, radial_profile = False, rm_reject = np.inf, propagation="C"):
+	def get_curve(self, energies, random_seed, L, r0=10.0, radial_profile = False, rm_reject = np.inf, propagation="C", cell_centered=True):
 		if self.model == "libanov":
 			self.domain.create_libanov_field()
 		else: 
-			self.domain.create_box_array(L, random_seed, self.coherence_func, r0=r0) 
+			self.domain.create_box_array(L, random_seed, self.coherence_func, r0=r0, cell_centered=cell_centered) 
+			
 
 		if propagation == "pure":
 			propagation_func = self.propagate_pure
 		else:
 			propagation_func = self.propagate
+
 		# only compute curve if RM Acceptable 
-		if self.domain.rm < rm_reject:
-			P, P_radial = propagation_func(self.domain, energies)
-		else: 
-			P, P_radial = None, None 
+		#if self.domain.rm < rm_reject:
+		P, P_radial = propagation_func(self.domain, energies)
+		#else: 
+		#	P, P_radial = None, None 
 
 		if radial_profile:
 			return (P, P_radial)
