@@ -337,9 +337,9 @@ class FieldModel:
 		self.phi = np.arctan(self.Bx/self.By) 
 		
 		if density == None:
-			self.ne = 1e-20 * np.ones_like(self.r)	# vanishing density 
+			self.ne = 1e-20 * np.ones_like(self.rcen)	# vanishing density 
 		elif density == "churasov":
-			self.ne = churasov_density(self.r)
+			self.ne = churasov_density(self.rcen)
 		#self.rm = self.get_rm()
 
 	def uniform_field_z(self, deltaL=1.0, Lmax=1800.0):
