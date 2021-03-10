@@ -8,6 +8,7 @@ MELEC = 9.10938356e-28
 PARSEC = 3.0857e18
 E = 4.8032045057134676e-10
 
+
 @jit(nopython=True)      
 def get_P(energies, Ainit, phi, B, L, g_a, mass, ne):
     M = 1.0 / g_a 

@@ -1,5 +1,4 @@
 import alpro.models as models 
-#import powerlaw
 import numpy as np 
 import alpro
 import alpro.util as util 
@@ -9,9 +8,9 @@ class Survival:
 	'''
 	High-level class which interfaces with actual ALP
 	calculation as well as cluster models to compute 
-	survival probability curves
+	survival probability curves.
 	'''
-	def __init__(self, ModelType, implementation="c"):
+	def __init__(self, ModelType, implementation="numba"):
 		self.model = ModelType
 		self.coherence_func = None
 
@@ -41,30 +40,33 @@ class Survival:
 			self.get_P = alpro.get_P
 
 	def set_coherence_r0(self, r0):
+		'''
+		Set the scale length over which the coherence length varies with radius.
+		'''
 		# this allows for variation of coherence length with radius in model B
 		self.coherence_r0 = r0
 
-	def set_churasov_density(self):
+	def set_churazov_density(self):
 		'''
-		manually override a density or B field function to churasov
+		Manually override a density or B field function to the churazov profile
 		'''
-		self.cluster.density = self.cluster.churasov_density
+		self.cluster.density = self.cluster.churazov_density
 
 	def init_model(self, lcorr=None):
 		if self.coherence_func == None:
 			self.coherence_func = lcorr
 
-		if self.model == "libanov":
+		if self.model == "libanov" or self.model == "uniform":
 			self.domain = models.FieldModel(profile=None)
 		else:
 			self.domain = models.FieldModel(profile=self.cluster.profile, coherence_r0=self.coherence_r0)
 
 	def get_curve(self, energies, random_seed, L, r0=10.0, radial_profile = False, rm_reject = np.inf, propagation="C", cell_centered=True):
+		
 		if self.model == "libanov":
 			self.domain.create_libanov_field()
 		else: 
 			self.domain.create_box_array(L, random_seed, self.coherence_func, r0=r0, cell_centered=cell_centered) 
-			
 
 		if propagation == "pure":
 			propagation_func = self.propagate_pure
@@ -83,6 +85,16 @@ class Survival:
 			return (P)
 
 	def set_params(self, g_a, mass):
+		'''
+		set the ALP coupling constant and mass
+
+		Parameters:
+			g_a 		float 
+						ALP coupling constant in eV^-1
+			mass 		float 
+						ALP mass in eV
+		'''
+
 		self.g_a = g_a 
 		self.mass = mass
 
@@ -130,7 +142,12 @@ class Survival:
 
 		return (P, P_radial)
 
-	def propagate(self, domain, energies):
+	def propagate_with_pruning(self, domain, energies, pol="both"):
+		domain_pruned = self.domain.prune 
+		self.propagate(domain_pruned, energies, pol=pol)
+
+	def propagate(self, domain, energies, pol="both", overwrite = False, 
+		          domain_temp = None):
 		'''
 		Propagate an unpolarised beam through a domain and 
 		calculate conversion into axion-like particles 
@@ -140,17 +157,38 @@ class Survival:
 						an alpro.models.FieldModel instance containing
 						magnetic field components, individual cell sizes
 						and densities.
+
 			energies	array-like
 						array of photon energies in electron volts 
+
+			pol 		string (optional)
+						
+
 		'''
 
-		Ainit1 = np.zeros( (len(energies),6))
-		Ainit1[:,2] = 1.0
+		# decide which polarization states to compute based on pol kwarg
+		if pol == "both":
+			ypol = True
+			xpol = True
+		elif pol == "x":
+			ypol = False
+			xpol = True
+		elif pol == "y":
+			ypol = True
+			xpol = False
+		else:
+			raise ValueError("pol keyword must be 'x', 'y' or 'both'")
 
-		Ainit2 = np.zeros( (len(energies),6))
-		Ainit2[:,0] = 1.0
+		if ypol:
+			Ainit_y = np.zeros( (len(energies),6))
+			Ainit_y[:,2] = 1.0
 
-		P_radial = np.zeros( (len(domain.r),len(energies)) )
+		if xpol:	
+			Ainit_x = np.zeros( (len(energies),6))
+			Ainit_x[:,0] = 1.0
+
+		self.P_radial = np.zeros( (len(domain.r),len(energies)) )
+	
 		
 		for i in range(len(domain.r)):
 			L = domain.deltaL[i]
@@ -158,17 +196,24 @@ class Survival:
 			phi = domain.phi[i] * np.ones_like(energies)
 			ne = domain.ne[i]
 
-			P1, Anew1 = alpro.get_P(energies, Ainit1, phi, B, L, self.g_a, self.mass, ne)
-			P2, Anew2 = alpro.get_P(energies, Ainit2, phi, B, L, self.g_a, self.mass, ne)
+			if ypol:
+				P_y, Anew_y = alpro.get_P(energies, Ainit_y, phi, B, L, self.g_a, self.mass, ne)
+				Ainit_y = Anew_y
+			if xpol:
+				P_x, Anew_x = alpro.get_P(energies, Ainit_x, phi, B, L, self.g_a, self.mass, ne)
+				Ainit_x = Anew_x
 
-			Ainit1 = Anew1
-			Ainit2 = Anew2
+			if xpol and ypol:
+				Ptot = 0.5 * (P_y + P_x)
+			elif xpol:
+				Ptot = P_x
+			elif ypol:
+				Ptot = P_y
 
-			P_radial[i,:] = 0.5 * (P1 + P2)
-			#for j in range(len(P1)):
-			#	if (P_radial[i,j]<0) or (P_radial[i,j]>1)
-			#		print (Anew1[j,:], Anew2[j,:], P1[j], P2[j]) 
+			self.P_radial[i,:] = Ptot
 
-		P = 0.5 * (P1 + P2)
 
-		return (P, P_radial)
+		self.P = 0.5 * (P_y + P_x)
+		self.energies = energies
+
+		return (self.P, self.P_radial)

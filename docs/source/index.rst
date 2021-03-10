@@ -16,7 +16,8 @@ The code is relatively simple, and the documentation at this stage is quite rudi
    description
    test
    examples
-
+   tests
+   functions
 
 
 Indices and tables

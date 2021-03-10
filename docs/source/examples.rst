@@ -1,9 +1,10 @@
 Examples
---------------------------------------
+----------------------------------------------------------------------------
+
 
 
 A Simple Survival Probability Calculation
-================================================
+=======================================================================
 A Survival Probability can be computed by
 
 .. code:: python
@@ -14,4 +15,4 @@ A Survival Probability can be computed by
 
 
 A Survival Probability using a Magnetic Field model
-================================================
+=======================================================================

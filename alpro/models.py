@@ -40,7 +40,8 @@ unit = units()
 
 def random_angle(size=None):
 	'''
-	compute a random isotropic angle 
+	compute theta and phi coordinates for 
+	a random isotropic angle 
 	'''
 	costheta = (2.0 * np.random.random(size=size)) - 1.0
 	phi = 2.0 * np.pi * np.random.random(size=size)
@@ -75,6 +76,11 @@ def get_libanov_B(r, theta=np.pi/4, Rcavity=93.0, alpha=5.76, C=6e-8):
     Br = 2.0 * np.cos(theta) * fr / rnorm / rnorm
     Btheta = -np.sin(theta) * fprime(rnorm, C, alpha) / rnorm
     Bphi = alpha * np.sin(theta) * fr / rnorm
+
+    # truncate the field beyond Rcavity
+    Btheta[rnorm > 1] = 0.0
+    Bphi[rnorm > 1] = 0.0
+    Br[rnorm > 1] = 0.0
     return (Btheta, Bphi, Br)
 
 def get_libanov_B_old(r, include_radial=True):
@@ -88,9 +94,9 @@ def get_libanov_B_old(r, include_radial=True):
 	else:
 		return 1e-6*Bx, 1e-6*By
 
-def churasov_density(r):
+def churazov_density(r):
 	'''
-	Density function from Churasov et al 2003
+	Density function from churazov et al 2003
 	Given as equation (2) of Reynolds et al. 2020
 
 	Parameters:
@@ -108,11 +114,12 @@ class ClusterProfile:
 	def __init__(self, model="a", plasma_beta = 100, B_rms=None, n=None):
 		
 		self.plasma_beta = plasma_beta
+		self.model = model
 
 		if model == "a":
-			# Model B from Reynolds+ 2020
+			# Model A from Reynolds+ 2020
 			self.get_B = self.B_modA 
-			self.density = churasov_density
+			self.density = churazov_density
 			self.n0 = self.density(0.0)
 			self.B0 = 2.5e-5
 			self.B_exponent = 0.7
@@ -120,7 +127,7 @@ class ClusterProfile:
 		elif model == "b":
 			# Model B from Reynolds+ 2020
 			self.get_B = self.B_modB 
-			self.density = churasov_density
+			self.density = churazov_density
 			self.n25 = self.density(25.0)
 
 		elif model == "flat":
@@ -130,7 +137,7 @@ class ClusterProfile:
 			self.B_rms = B_rms
 			self.n = n
 			self.get_B = self.Bflat
-			self.density = churasov_density
+			self.density = churazov_density
 
 		elif model == "murgia":
 			self.n0 = 1e-3 
@@ -151,50 +158,33 @@ class ClusterProfile:
 			self.density = self.pl_density
 			self.get_B = self.BendingPL_B
 
-
-
-		# elif model == "russell":
-		# 	# Russell+ 2010 paper on 1821
-		# 	# read the data, which should be in data subfolder 
-		# 	folder = os.path.dirname(__file__)
-		# 	filename = "{}/data/russell-pressure.dat".format(folder)
-		# 	r, P = np.genfromtxt(filename, unpack=True)
-
-		# 	filename = "{}/data/russell-density.dat".format(folder)
-		# 	r2, n = np.genfromtxt(filename, unpack=True)
-
-		# 	# convert from Pascals_to_dynes
-		# 	#P *= 10.0
-
-		# 	# get magnetic field from pressure 
-		# 	B = np.sqrt(8.0 * np.pi * P / plasma_beta)
-
-		# 	#kT = t_keV * unit.ev * 1000.0
-		# 	#n = P / kT
-
-		# 	# create interpolation functions
-		# 	self.get_B = interp1d(r, B, kind="slinear", fill_value="extrapolate")
-
-		# 	# create interpolation functions
-		# 	self.density = interp1d(r2, n, kind="slinear", fill_value="extrapolate")
 		elif model == "custom":
 			print ("Warning: Custom model specified - need to make sure get_B and density methods are populated!")
 
 		else:
 			raise ValueError("ClusterProfile did not understand model type {}".format(model))
 
-	def churasov_density(self, r):
-		return (churasov_density(r))
+	def churazov_density(self, r):
+		return (churazov_density(r))
 
 	def beta_density(self, r):
+		'''
+		beta law density.
+		'''
 		exponent = -3.0 * self.beta / 2.0
 		n = self.n0 * (1 + (r/self.r0)**2) ** exponent
 		return (n)
 
 	def pl_density(self, r):
+		'''
+		power law density.
+		'''
 		return (self.n0 * (r ** -self.pl_alpha))
 
 	def BendingPL_B(self, r):
+		'''
+		bending power law density.
+		'''
 		numer = r**-self.a_low
 		denom = 1 + (r/self.r_bend)**(self.a_high-self.a_low)
 		P = self.P0 * (numer/denom) 
@@ -239,7 +229,7 @@ class ClusterFromFile:
 		self.Bfull = np.load(fname)
 		self.N = self.Bfull.shape[0]
 		self.mid = self.N//2
-		self.density = churasov_density
+		self.density = churazov_density
 
 		if model_type == "cube":
 			if any(i != self.N for i in self.Bfull.shape[:-1]):
@@ -315,11 +305,23 @@ class ClusterFromFile:
 	def profile(self, r):
 		return (self.density(r), self.get_B(r))
 
+def omega_p(ne):
+	'''
+	calculate the plasma frequency in natural (eV) units 
 
+	Parameters:
+		ne 		float/array-like
+				electron density in cm^-3
+	'''
+	omega_p = np.sqrt (4.0 * np.pi * unit.e * unit.e * ne / unit.melec) * unit.hbar_ev
+	return (omega_p)
+
+# Possibly this should be renamed to Domain, or similar
 class FieldModel:
 	def __init__(self, profile, plasma_beta=100, coherence_r0 = None):
 		self.profile = profile
 		self.beta = plasma_beta
+
 		# coherence_r0 scales the coherence lengths with radius 
 		# by a factor of (1 + r/coherence_r0), in kpc
 		self.coherence_r0 = coherence_r0
@@ -327,7 +329,18 @@ class FieldModel:
 
 	def create_libanov_field(self, deltaL=1.0, Lmax=93.0, density=None, theta=np.pi/4.0):
 		'''
-		set arrays according to uniform field model of Libanox et al.
+		Initialise  uniform field model of Libanov & Troitsky. 
+
+		Parameters:
+			deltaL 		float 
+						resolution of domain in kpc 
+
+			Lmax 		float 
+						maximum radius in kpc 
+
+			density 	str / Nonetype 
+						if None, use vanishing density. if set 
+
 		'''
 		self.r = np.arange(0, Lmax, deltaL)
 		self.deltaL = np.ones_like(self.r) * deltaL
@@ -338,11 +351,24 @@ class FieldModel:
 		
 		if density == None:
 			self.ne = 1e-20 * np.ones_like(self.rcen)	# vanishing density 
-		elif density == "churasov":
-			self.ne = churasov_density(self.rcen)
+		elif density == "churazov":
+			self.ne = churazov_density(self.rcen)
+		else:
+			raise ValueError("density keyword must be Nonetype or churazov")
 		#self.rm = self.get_rm()
+		self.omega_p = omega_p(self.ne)
 
 	def uniform_field_z(self, deltaL=1.0, Lmax=1800.0):
+		'''
+		Set up a uniform radial field model with a uniform field sampled at N points.
+
+		Parameters:
+			deltaL 		float 
+						size of boxes in kpc
+
+			Lmax 		float 
+						size of domain in kpc
+		'''
 		self.r = np.arange(0, Lmax-deltaL, deltaL)
 		self.deltaL = np.ones_like(self.r) * deltaL
 		self.rcen = self.r + (0.5 * self.deltaL)
@@ -350,23 +376,45 @@ class FieldModel:
 		self.ne, self.Bz = self.profile(self.rcen)
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
 		self.phi = np.zeros_like(self.Bx)
+		self.omega_p = omega_p(self.ne)
+
+	def single_box(self, phi, B, L, ne, N=1):
+		'''
+		Set up a Field model with a uniform field sampled at N points.
+
+		Parameters:
+			phi 	float 
+					angle between perpendicular magnetic field and y axis
+
+			B 		float 
+					magnetic field strength in Gauss
+
+			L 		float 
+					size of domain in kpc
+
+			ne 		float 
+					electron density in cm^-3
+		'''
+		self.r = np.linspace(0, L, N)
+		self.deltaL = np.ones_like(self.r) * (L - self.r[-1])
+		self.rcen = self.r + (0.5 * self.deltaL)
+		self.ne = np.ones_like(self.r) * ne 
+		self.phi = np.ones_like(self.r) * phi
+		self.B = np.ones_like(self.r) * B
 
 
 	def get_rm(self):
-		prefactor = (unit.e ** 3) / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
+		r'''
+		Calculate the rotation measure of the field model using Simpson integration.
+		Equation is :math:`RM= 812 \int n_e B_z dz` with the field in microGauss
+
+		Returns:
+			the rotation measure of the field model in rad m^-2
+		'''
+		#prefactor = (unit.e ** 3) / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
 		prefactor = 812.0
-
-		# integrate using simpson 
-		# units are cm^-3, kpc and microgauss
-		#integral = simps(self.rcen * unit.kpc, self.ne * self.Bz * 1e6)
-		#costheta = 
-		#n_dot_Bz = 
 		integral = simps(self.rcen, self.ne * self.Bz * 1e6)
-		# ntegral = 1.0
 
-		#integral = simps(self.rcen * unit.kpc, self.ne * self.Bz)
-		
-		# convert to rad / m^2 and return 
 		return (prefactor * integral)
 
 	def domain_from_slice(self, Cluster, deltaL=1.0, Lmax=500.0):
@@ -378,11 +426,12 @@ class FieldModel:
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
 		self.phi = np.arctan(self.Bx/self.By) 
 		self.ne = Cluster.density(self.r) 
-		#self.rm = self.get_rm()
+		self.omega_p = omega_p(self.ne)
 
 	def resample_box(self, new_redge, interp1d_kwargs={"kind": "quadratic", "fill_value": "extrapolate"}):
 		'''
-		this must be called after the Bx, By, r arrays are already populated
+		Resample a box array on to a new 1D grid using 1d interpolation.
+		Must be called after the Bx, By, r arrays are already populated.
 		'''
 		interp_x = interp1d(self.rcen, self.Bx, **interp1d_kwargs)
 		interp_y = interp1d(self.rcen, self.By, **interp1d_kwargs)
@@ -395,7 +444,7 @@ class FieldModel:
 		self.deltaL = new_redge[1:] - new_redge[:-1]
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
 		self.phi = np.arctan(self.Bx/self.By) 
-		self.ne, _ = self.profile(self.rcen)
+		#self.ne, _ = self.profile(self.rcen)
 
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0, cell_centered=True):
@@ -472,10 +521,11 @@ class FieldModel:
 
 		# get density and magnetic field strength at centre of box
 		if cell_centered: 
-			rprofile = self.r 
+			rprofile = self.rcen  
 		else:
-			rprofile = self.rcen
+			rprofile = self.r
 		self.ne, Btot = self.profile(rprofile)
+		self.cell_centered = cell_centered
   
 		# get the x and y components and increment r
 		#Bx_array.append(B * np.sin(theta2))
@@ -490,7 +540,138 @@ class FieldModel:
 
 		self.Bz = Btot * np.cos(theta) 
 		self.rm = self.get_rm()
+		self.omega_p = omega_p(self.ne)
 		#print (self.rm)
+
+
+
+	def resonance_prune(self, mass, threshold = 0.1, refine = 50):
+		# first identify any close-to resonances
+		delta = np.log10(self.omega_p) - np.log10(mass)
+		select = (np.fabs(delta) < threshold)
+
+		# copy the domain to a new class
+		domain_to_return = CopyDomain(self)
+
+		# if no close to resonances, nothing to be done
+		if np.sum(select) == 0:
+			return (domain_to_return)
+
+		# find non zero parts of selection
+		index = np.asarray(select).nonzero()
+
+		if len(index) > 1:
+		# multiple domains are close to resonance. This means 
+		# we must be resolving the resonance relatively well, 
+		# so we just discard the the two points that span the actual resonance
+			# Just discard the closest two 
+			closest = np.argpartition(np.fabs(delta), 1)[0:2]
+			ind1 = np.min(closest)
+			ind2 = np.max(closest)
+			if (ind2 - ind1) != 1:
+				print ("Warning: resonance_prune: values close to resonance are not adjacent!")
+			
+			attrs_to_mod = ["ne", "Bx", "By", "Bz", "B", "phi", "deltaL", "r", "rcen", "Bz", "omega_p"]
+			for a in attrs_to_mod:
+				arr = getattr(domain_to_return, a)
+				to_concat = (arr[:ind1], arr[ind2 + 1:])
+				arr_new = np.concatenate(to_concat)
+				setattr(domain_to_return, a, arr_new)
+			
+			#self.rm = self.get_rm()
+
+		# there is only one domain close to resonance point, so we need to resample
+		elif len(index) == 1:
+			ind = index[0][0]
+			r0 = self.r[index]
+
+			# new r array 
+			r_insert = np.linspace(self.r[ind], self.r[ind + 1], refine + 1)
+			rcen_insert = 0.5 * (r_insert[1:] - r_insert[:-1])
+
+			# new r and rcen arrays 
+			r = np.concatenate( (self.r[:ind], r_insert[:-1], self.r[ind+1:]))
+			rcen = np.concatenate( (self.rcen[:ind], rcen_insert, self.r[ind+1:]))
+
+			deltaL_insert = r_insert[1:] - r_insert[:-1]
+			deltaL = np.concatenate( (self.deltaL[:ind], deltaL_insert, self.deltaL[ind+1:]))
+
+			# get the density
+			if self.cell_centered: 
+				rprofile = rcen  
+			else:
+				rprofile = r
+			ne, _ = self.profile(rprofile)
+			w_p = omega_p(ne)
+			new_delta = np.log10(w_p) - np.log10(mass)
+
+			# cut out closest two arguments
+			closest = np.argpartition(np.fabs(new_delta), 1)[0:2]
+			ind1 = np.min(closest)
+			ind2 = np.max(closest)
+			domain_to_return.r = np.concatenate( (r[:ind1], r[ind2+1:]))
+			domain_to_return.rcen = np.concatenate( (rcen[:ind1], rcen[ind2+1:]))
+			domain_to_return.ne = np.concatenate( (ne[:ind1], ne[ind2+1:]))
+			domain_to_return.omega_p = omega_p(ne)
+			domain_to_return.deltaL = np.concatenate( (deltaL[:ind1], deltaL[ind2+1:]))
+
+
+			# things that remain constant across resampling
+			attrs_const = ["Bx", "By", "Bz", "B", "phi"]
+			#list_const = [domain_to_return.Bx, self.By, self.B, self.phi, self.Bz]
+			for a in attrs_const:
+				arr = getattr(domain_to_return, a)
+				arr_insert = np.ones(len(rcen_insert)-2) * arr[ind]
+				to_concat = (arr[:ind], arr_insert, arr[ind + 1:])
+				arr = np.concatenate(to_concat)
+				setattr(domain_to_return, a, arr)
+
+
+
+		#domain_to_return = DomainTemp(deltaL, B, phi, ne, len(index))
+
+		return (domain_to_return)
+
+
+
+
+	def concat(self, index1, index2, insert_array=None):
+		'''
+		cut out the middle part of an array, between index1 and index2,
+		and stick the two ends back together again. Used to excise problematic
+		portions of a domain.
+
+
+		Parameters:
+			index1 		int 
+						the starting point of the excision
+			index2    	int
+						the ending point of the excision.				
+		'''
+
+
+
+		arrays_to_splice = [self.r, self.rcen, self.Bx, self.By, self.B, self.omega_p, self.phi, self.ne, self.Bz]
+		for arr in arrays_to_splice:
+			arr = np.concatenate( (arr[:index1], arr[index2:]) )
+
+		return len(self.r)
+
+
+# this class copies over a different class to a new one without 
+# trying to write non-writable attributes and without altering the original
+# class
+class CopyDomain:
+    def __init__(self, input_domain):
+        attrs_to_copy = [f for f in dir(input_domain) if "__" not in f]
+        for a in attrs_to_copy:
+            #print (a)
+            value = getattr(input_domain, a)
+            setattr(self, a, value)
+
+
+
+
 
 
 

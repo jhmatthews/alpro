@@ -48,7 +48,7 @@ class modelb_powerlaw:
 	For a power of form x**-n, with b>1, from xmin to xmax, the resulting
 	CDF can be shown to take the analytic form
 
-		CDF(x) = (xmin^alpha - x^alpha) / (xmin^alpha - xmax^alpha)
+		:math:`CDF(x) = (xmin^alpha - x^alpha) / (xmin^alpha - xmax^alpha)`
 
 	where alpha = 1-n. Thus, if z is a random number in range (0,1),
 	then a random variable rv can be found by inverting this expression,
@@ -85,9 +85,7 @@ class modelb_powerlaw:
 def delta_eff(energy, ne, mass):
 	r'''
 	Calculate delta_eff for a B field in Gauss, a mass in eV and a photon energy in eV
-	$$
-	\Delta_{\rm eff} = \frac{m_A^2 - \omega_p^2}{4 \omega}
-	$$
+	:math:`\Delta_{\rm eff} = \frac{m_A^2 - \omega_p^2}{4 \omega}`
 	'''
 	omega_p = np.sqrt (4.0 * np.pi * unit.e * unit.e * ne / unit.melec) * unit.hbar_ev;
 	delta = ((mass * mass) - (omega_p * omega_p)) / 4.0 / energy
@@ -96,9 +94,7 @@ def delta_eff(energy, ne, mass):
 def theta(energy, B, ne, mass, g_a):
 	r'''
 	Calculate delta_eff for a B field in Gauss, a mass in eV and a photon energy in eV
-	$$
-	\Theta = \frac{2 B_\perp \omega g_a}{m_A^2 - \omega_p^2}.
-	$$
+	:math:`\Theta = \frac{2 B_\perp \omega g_a}{m_A^2 - \omega_p^2}`.
 	'''
 	B *= unit.unit_gauss_natural
 	omega_p = np.sqrt (4.0 * np.pi * unit.e * unit.e * ne /
