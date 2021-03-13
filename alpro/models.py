@@ -557,7 +557,9 @@ class FieldModel:
 		domain_to_return = CopyDomain(self)
 
 		# if no close to resonances, nothing to be done
-		if np.sum(select) == 0:
+		# also don't worry about cases where the resonance happens off the end of the 
+		# array 
+		if (np.sum(select) == 0) or (np.argmin(np.fabs(delta)) == len(self.omega_p)-1):
 			return (domain_to_return)
 
 		# find non zero parts of selection
