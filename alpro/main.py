@@ -142,9 +142,13 @@ class Survival:
 
 		return (P, P_radial)
 
-	def propagate_with_pruning(self, domain, energies, pol="both"):
-		domain_pruned = self.domain.prune 
-		self.propagate(domain_pruned, energies, pol=pol)
+	def propagate_with_pruning(self, domain, energies, pol="both", threshold = 0.1, refine = 10, required_res = 3):
+		#resonance_prune(self, mass, threshold = 0.1, refine = 50, required_res = 3)
+		domain_pruned = self.domain.resonance_prune(self.mass, 
+			            threshold = threshold, refine = refine, required_res = required_res)
+		P, P_radial = self.propagate(domain_pruned, energies, pol=pol)
+		return (P, P_radial)
+
 
 	def propagate(self, domain, energies, pol="both", overwrite = False, 
 		          domain_temp = None):

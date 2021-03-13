@@ -498,20 +498,23 @@ class FieldModel:
 			if (r + lc) > L:
 				lc = (L-r) + 1e-10
 
-			if rcen == r0:
-				rcen += lc / 2.0
-			else:
-				rcen += lc
+			#if rcen == r0:
+			#	rcen += lc / 2.0
+			#else:
+			#	rcen += lc
 
-			rcen_array.append(rcen)
+			#rcen_array.append(rcen)
 			r_array.append(r)
 			deltaL_array.append(lc)
 
 			r += lc
+			rcen = r - (lc / 2.0)
+			rcen_array.append(rcen) 
 
 		# now we have box sizes and radii, get the field and density in each box 
 		Ncells = len(r_array)
 		self.r = np.array(r_array)
+		#rcen_array = np.array(0.5 * (self.r[1:] + self.r[:-1]))
 		self.rcen = np.array(rcen_array)
 		self.deltaL = np.array(deltaL_array)
 
@@ -545,7 +548,7 @@ class FieldModel:
 
 
 
-	def resonance_prune(self, mass, threshold = 0.1, refine = 50):
+	def resonance_prune(self, mass, threshold = 0.1, refine = 50, required_res = 3):
 		# first identify any close-to resonances
 		delta = np.log10(self.omega_p) - np.log10(mass)
 		select = (np.fabs(delta) < threshold)
@@ -558,16 +561,17 @@ class FieldModel:
 			return (domain_to_return)
 
 		# find non zero parts of selection
-		index = np.asarray(select).nonzero()
+		index = np.asarray(select).nonzero()[0]
 
-		if len(index) > 1:
+		if len(index) > required_res:
 		# multiple domains are close to resonance. This means 
 		# we must be resolving the resonance relatively well, 
 		# so we just discard the the two points that span the actual resonance
 			# Just discard the closest two 
-			closest = np.argpartition(np.fabs(delta), 1)[0:2]
-			ind1 = np.min(closest)
-			ind2 = np.max(closest)
+			closest1 = np.where(delta > 0, delta, np.inf).argmin()
+			closest2 = np.where(-delta > 0, -delta, np.inf).argmin()
+			ind1 = np.min((closest1, closest2))
+			ind2 = np.max((closest1, closest2))
 			if (ind2 - ind1) != 1:
 				print ("Warning: resonance_prune: values close to resonance are not adjacent!")
 			
@@ -580,18 +584,21 @@ class FieldModel:
 			
 			#self.rm = self.get_rm()
 
-		# there is only one domain close to resonance point, so we need to resample
-		elif len(index) == 1:
-			ind = index[0][0]
-			r0 = self.r[index]
+		# there are only a few domains close to resonance point, so we need to resample
+		elif len(index) <= required_res:
+			# find the point either side of the resonance and find the first one
+			closest1 = np.where(delta > 0, delta, np.inf).argmin()
+			closest2 = np.where(-delta > 0, -delta, np.inf).argmin()
+			ind = np.min((closest1, closest2))
+			print (closest1, closest2)
 
 			# new r array 
 			r_insert = np.linspace(self.r[ind], self.r[ind + 1], refine + 1)
-			rcen_insert = 0.5 * (r_insert[1:] - r_insert[:-1])
+			rcen_insert = 0.5 * (r_insert[1:] + r_insert[:-1])
 
 			# new r and rcen arrays 
 			r = np.concatenate( (self.r[:ind], r_insert[:-1], self.r[ind+1:]))
-			rcen = np.concatenate( (self.rcen[:ind], rcen_insert, self.r[ind+1:]))
+			rcen = np.concatenate( (self.rcen[:ind], rcen_insert, self.rcen[ind+1:]))
 
 			deltaL_insert = r_insert[1:] - r_insert[:-1]
 			deltaL = np.concatenate( (self.deltaL[:ind], deltaL_insert, self.deltaL[ind+1:]))
@@ -605,26 +612,39 @@ class FieldModel:
 			w_p = omega_p(ne)
 			new_delta = np.log10(w_p) - np.log10(mass)
 
-			# cut out closest two arguments
-			closest = np.argpartition(np.fabs(new_delta), 1)[0:2]
-			ind1 = np.min(closest)
-			ind2 = np.max(closest)
-			domain_to_return.r = np.concatenate( (r[:ind1], r[ind2+1:]))
-			domain_to_return.rcen = np.concatenate( (rcen[:ind1], rcen[ind2+1:]))
-			domain_to_return.ne = np.concatenate( (ne[:ind1], ne[ind2+1:]))
-			domain_to_return.omega_p = omega_p(ne)
-			domain_to_return.deltaL = np.concatenate( (deltaL[:ind1], deltaL[ind2+1:]))
+			# find closest two arguments
+			closest1 = np.where(new_delta > 0, new_delta, np.inf).argmin()
+			closest2 = np.where(-new_delta > 0, -new_delta, np.inf).argmin()
+			ind_new = np.min((closest1, closest2))
 
+			if ind_new == (ind + len(rcen_insert) - 1):
+				ndiscard = 1
+			else:
+				ndiscard = 2
+
+
+
+			domain_to_return.r = np.concatenate( (r[:ind_new], r[ind_new+ndiscard:]))
+			domain_to_return.rcen = np.concatenate( (rcen[:ind_new], rcen[ind_new+ndiscard:]))
+			domain_to_return.ne = np.concatenate( (ne[:ind_new], ne[ind_new+ndiscard:]))
+			domain_to_return.omega_p = omega_p(domain_to_return.ne)
+			domain_to_return.deltaL = np.concatenate( (deltaL[:ind_new], deltaL[ind_new+ndiscard:]))
+			N = len(domain_to_return.r)
+			print (N, len(self.r))
+			assert (N == (len(self.r) + refine - ndiscard - 1))
 
 			# things that remain constant across resampling
 			attrs_const = ["Bx", "By", "Bz", "B", "phi"]
 			#list_const = [domain_to_return.Bx, self.By, self.B, self.phi, self.Bz]
 			for a in attrs_const:
 				arr = getattr(domain_to_return, a)
-				arr_insert = np.ones(len(rcen_insert)-2) * arr[ind]
-				to_concat = (arr[:ind], arr_insert, arr[ind + 1:])
+				arr_insert = np.ones(len(rcen_insert)-1) * arr[ind]
+				to_concat = (arr[:ind], arr_insert, arr[ind + ndiscard:])
 				arr = np.concatenate(to_concat)
 				setattr(domain_to_return, a, arr)
+				assert (len(getattr(domain_to_return, a)) == N)
+
+
 
 
 
