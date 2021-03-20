@@ -216,8 +216,7 @@ class Survival:
 
 			self.P_radial[i,:] = Ptot
 
-
-		self.P = 0.5 * (P_y + P_x)
+		self.P = Ptot
 		self.energies = energies
 
 		return (self.P, self.P_radial)

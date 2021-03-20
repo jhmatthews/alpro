@@ -444,7 +444,7 @@ class FieldModel:
 		self.deltaL = new_redge[1:] - new_redge[:-1]
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
 		self.phi = np.arctan(self.Bx/self.By) 
-		#self.ne, _ = self.profile(self.rcen)
+		self.ne, _ = self.profile(self.rcen)
 
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0, cell_centered=True):
