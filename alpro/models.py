@@ -433,8 +433,12 @@ class FieldModel:
 		Resample a box array on to a new 1D grid using 1d interpolation.
 		Must be called after the Bx, By, r arrays are already populated.
 		'''
-		interp_x = interp1d(self.rcen, self.Bx, **interp1d_kwargs)
-		interp_y = interp1d(self.rcen, self.By, **interp1d_kwargs)
+
+		interp_array_r = np.concatenate( (self.r[0:1], self.rcen, self.r[-1:] + self.deltaL[-1:]))
+		interp_Bx = np.concatenate( (self.Bx[0:1], self.Bx, self.Bx[-1:]))
+		interp_By = np.concatenate( (self.By[0:1], self.By, self.By[-1:]))
+		interp_x = interp1d(interp_array_r, interp_Bx, **interp1d_kwargs)
+		interp_y = interp1d(interp_array_r, interp_By, **interp1d_kwargs)
 
 		# populate new values 
 		self.rcen = 0.5 * (new_redge[1:] + new_redge[:-1])

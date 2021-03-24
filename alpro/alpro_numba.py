@@ -30,6 +30,7 @@ def get_P(energies, Ainit, phi, B, L, g_a, mass, ne):
         # write in complex form 
         energy = energies[i]
         A = Atemp[:,0] + 1j * Atemp[:,1]
+        #rho = np.dot(A,A.conjugate())
         A2 = PropagateOne(alpha[i], EVarray[i], phi[i], A, distance, energy)
 
         A_new[i,::2] = A2.real

@@ -15,7 +15,7 @@ is that of a reduced Schrodinger-like equation, which is first-order and given b
 
 	\left( i \frac{d}{d z} + \omega + {\cal M}_0 \right) \, \psi (z) = 0.
 
-where :math:`\omega` is the beam energy, :math:`\psi (z)` is the beam photon-ALP state vector and :math:`{\cal M}_0` is the mixing matrix, given by
+where :math:`\omega` is the beam energy, :math:`\psi (z) = (A_x, A_y, a)` is the beam photon-ALP state vector and :math:`{\cal M}_0` is the mixing matrix, given by
 
 .. math::
 
@@ -34,7 +34,13 @@ where we neglect the Faraday rotation terms :math:`\Delta_{yx}` and :math:`\Delt
     \Delta_{a a} = -\frac{m_a^2}{2 \omega} \\
     \Delta_{xx} = -\frac{\omega_p^2}{2\omega} \\
 
-where :math:`m_a` and :math:`g_a` are the ALP mass and coupling constant, and are the fundamental ALP parameters in the problem. :math:`\omega_p` is the normal plasma frequency. The beam equation above resembles a Schrodinger equation with Hamiltonian :math:`-(\omega + {\cal M}_0)`. 
+where :math:`m_a` and :math:`g_a` are the ALP mass and coupling constant, and are the fundamental ALP parameters in the problem. :math:`\omega_p` is the normal plasma frequency. The beam equation above resembles a Schrodinger equation with Hamiltonian :math:`-(\omega + {\cal M}_0)`. We now 
+define the transfer matrix :math:`U_0(z, z_0)` which is the solution of the beam equation with initial condition :math:`U_0=1`. Then, the state vector at a given distance :math:`z` is given by
+
+.. math::
+
+	\psi (z) = U_0 (z, z_0) \, \psi (z_0) 
+
 
 Code operation
 =====================
