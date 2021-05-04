@@ -347,7 +347,7 @@ class FieldModel:
 		self.rcen = self.r + (0.5 * self.deltaL)
 		self.Bx, self.By, self.Bz = get_libanov_B(self.rcen, theta=theta)
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
-		self.phi = np.arctan(self.Bx/self.By) 
+		self.phi = np.arctan2(self.Bx,self.By) 
 		
 		if density == None:
 			self.ne = 1e-20 * np.ones_like(self.rcen)	# vanishing density 
@@ -424,7 +424,7 @@ class FieldModel:
 		self.Bx, self.By = Cluster.get_B(self.rcen)
 		self.Bz = Cluster.get_Bz(self.rcen)
 		self.B = np.sqrt(self.Bx**2 + self.By**2) 
-		self.phi = np.arctan(self.Bx/self.By) 
+		self.phi = np.arctan2(self.Bx,self.By) 
 		self.ne = Cluster.density(self.r) 
 		self.omega_p = omega_p(self.ne)
 
@@ -447,7 +447,7 @@ class FieldModel:
 		self.r = new_redge[:-1]
 		self.deltaL = new_redge[1:] - new_redge[:-1]
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
-		self.phi = np.arctan(self.Bx/self.By) 
+		self.phi = np.arctan2(self.Bx,self.By) 
 		self.ne, _ = self.profile(self.rcen)
 
 
@@ -542,7 +542,7 @@ class FieldModel:
 
 		# note B is actually Bperp
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
-		self.phi = np.arctan(self.Bx/self.By) 
+		self.phi = np.arctan2(self.Bx,self.By) 
 		#self.phi = phi
 
 		self.Bz = Btot * np.cos(theta) 

@@ -10,7 +10,7 @@ class Survival:
 	calculation as well as cluster models to compute 
 	survival probability curves.
 	'''
-	def __init__(self, ModelType, implementation="numba"):
+	def __init__(self, ModelType, implementation="numba", pol_matrix=False):
 		self.model = ModelType
 		self.coherence_func = None
 
@@ -38,6 +38,8 @@ class Survival:
 			self.get_P = alpro.pure.get_P
 		elif implementation == "numba":
 			self.get_P = alpro.get_P
+
+		self.pol_matrix_bool = pol_matrix
 
 	def set_coherence_r0(self, r0):
 		'''
@@ -98,50 +100,6 @@ class Survival:
 		self.g_a = g_a 
 		self.mass = mass
 
-	def propagate_pure(self, domain, energies):
-		'''
-		Propagate an unpolarised beam through a domain and 
-		calculate conversion into axion-like particles. Use Pure
-		python routines.
-
-		Parameters:
-			domain 		object
-						an alpro.models.FieldModel instance containing
-						magnetic field components, individual cell sizes
-						and densities.
-			energies	array-like
-						array of photon energies in electron volts 
-		'''
-
-		Ainit1 = np.zeros( (len(energies),6))
-		Ainit1[:,2] = 1.0
-
-		Ainit2 = np.zeros( (len(energies),6))
-		Ainit2[:,0] = 1.0
-
-		P_radial = np.zeros( (len(domain.r),len(energies)) )
-		
-		for i in range(len(domain.r)):
-			L = domain.deltaL[i]
-			B = domain.B[i]
-			phi = domain.phi[i] * np.ones_like(energies)
-			ne = domain.ne[i]
-
-			P1, Anew1 = alpro.pure.get_P(energies, Ainit1, phi, B, L, self.g_a, self.mass, ne)
-			P2, Anew2 = alpro.pure.get_P(energies, Ainit2, phi, B, L, self.g_a, self.mass, ne)
-
-			Ainit1 = Anew1
-			Ainit2 = Anew2
-
-			P_radial[i,:] = 0.5 * (P1 + P2)
-			#for j in range(len(P1)):
-			#	if (P_radial[i,j]<0) or (P_radial[i,j]>1)
-			#		print (Anew1[j,:], Anew2[j,:], P1[j], P2[j]) 
-
-		P = 0.5 * (P1 + P2)
-
-		return (P, P_radial)
-
 	def propagate_with_pruning(self, domain, energies, pol="both", threshold = 0.1, refine = 10, required_res = 3):
 		#resonance_prune(self, mass, threshold = 0.1, refine = 50, required_res = 3)
 		domain_pruned = self.domain.resonance_prune(self.mass, 
@@ -151,7 +109,7 @@ class Survival:
 
 
 	def propagate(self, domain, energies, pol="both", overwrite = False, 
-		          domain_temp = None):
+		          domain_temp = None, pol_matrix = None):
 		'''
 		Propagate an unpolarised beam through a domain and 
 		calculate conversion into axion-like particles 
@@ -183,16 +141,25 @@ class Survival:
 		else:
 			raise ValueError("pol keyword must be 'x', 'y' or 'both'")
 
-		if ypol:
-			Ainit_y = np.zeros( (len(energies),6))
-			Ainit_y[:,2] = 1.0
+		if pol_matrix == None:
+			pol_matrix = self.pol_matrix_bool
 
-		if xpol:	
-			Ainit_x = np.zeros( (len(energies),6))
-			Ainit_x[:,0] = 1.0
+		if pol_matrix:
+			init_x, init_y, _ = pure_pol_vectors_like(energies)
+			calculate_P = alpro.get_P_matrix
+		else:
+			if ypol:
+				init_y = np.zeros( (len(energies),3), dtype=np.complex128)
+				init_y[:,1] = 1.0
 
+			if xpol:	
+				init_x = np.zeros( (len(energies),3), dtype=np.complex128)
+				init_x[:,0] = 1.0
+
+			calculate_P = alpro.get_P
+
+		
 		self.P_radial = np.zeros( (len(domain.r),len(energies)) )
-	
 		
 		for i in range(len(domain.r)):
 			L = domain.deltaL[i]
@@ -201,11 +168,12 @@ class Survival:
 			ne = domain.ne[i]
 
 			if ypol:
-				P_y, Anew_y = alpro.get_P(energies, Ainit_y, phi, B, L, self.g_a, self.mass, ne)
-				Ainit_y = Anew_y
+				P_y, new_y = calculate_P(energies, init_y, phi, B, L, self.g_a, self.mass, ne)
+				init_y = new_y
+
 			if xpol:
-				P_x, Anew_x = alpro.get_P(energies, Ainit_x, phi, B, L, self.g_a, self.mass, ne)
-				Ainit_x = Anew_x
+				P_x, new_x = calculate_P(energies, init_x, phi, B, L, self.g_a, self.mass, ne)
+				init_x = new_x
 
 			if xpol and ypol:
 				Ptot = 0.5 * (P_y + P_x)
@@ -220,3 +188,14 @@ class Survival:
 		self.energies = energies
 
 		return (self.P, self.P_radial)
+
+
+def pure_pol_vectors_like(arr):
+	size = len(arr)
+	x = np.zeros((size,3,3), dtype=np.complex128)
+	y = np.zeros((size,3,3), dtype=np.complex128)
+	a = np.zeros((size,3,3), dtype=np.complex128)
+	x[:,0,0] = 1.0 + 0.0j
+	y[:,1,1] = 1.0 + 0.0j
+	a[:,2,2] = 1.0 + 0.0j
+	return (x,y,a)
