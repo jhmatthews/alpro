@@ -32,6 +32,10 @@ class Survival:
 			self.coherence_func = pl.rvs
 			self.set_coherence_r0(50.0)
 
+		elif self.model == "custom":
+			self.cluster = models.ClusterProfile(model="custom")
+			self.coherence_r0 = None
+
 		if implementation == "c":
 			self.get_P = alpro.core.get_P 
 		elif implementation == "python":
