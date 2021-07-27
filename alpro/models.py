@@ -428,7 +428,7 @@ class FieldModel:
 		self.ne = Cluster.density(self.r) 
 		self.omega_p = omega_p(self.ne)
 
-	def resample_box(self, new_redge, interp1d_kwargs={"kind": "quadratic", "fill_value": "extrapolate"}):
+	def resample_box(self, new_redge, interp1d_kwargs={"kind": "quadratic", "fill_value": "extrapolate"}, profile=True):
 		'''
 		Resample a box array on to a new 1D grid using 1d interpolation.
 		Must be called after the Bx, By, r arrays are already populated.
@@ -448,7 +448,10 @@ class FieldModel:
 		self.deltaL = new_redge[1:] - new_redge[:-1]
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
 		self.phi = np.arctan2(self.Bx,self.By) 
-		self.ne, _ = self.profile(self.rcen)
+		if profile:
+			self.ne, _ = self.profile(self.rcen)
+		#else:
+
 
 
 	def create_box_array(self, L, random_seed, coherence, r0=10.0, cell_centered=True):
