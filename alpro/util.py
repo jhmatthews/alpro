@@ -93,7 +93,7 @@ def delta_eff(energy, ne, mass):
 
 def theta(energy, B, ne, mass, g_a):
 	r'''
-	Calculate delta_eff for a B field in Gauss, a mass in eV and a photon energy in eV
+	Calculate capital Theta for a B field in Gauss, a mass in eV and a photon energy in eV
 	:math:`\Theta = \frac{2 B_\perp \omega g_a}{m_A^2 - \omega_p^2}`.
 	'''
 	B *= unit.unit_gauss_natural

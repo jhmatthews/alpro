@@ -8,27 +8,27 @@ class Survival:
 	'''
 	High-level class which interfaces with actual ALP
 	calculation as well as cluster models to compute 
-	survival probability curves.
+	survival probability curves. 
 	'''
-	def __init__(self, ModelType, implementation="numba", pol_matrix=False):
+	def __init__(self, ModelType, implementation="numba", pol_matrix=False, xmin=3.5, xmax=10.0):
 		self.model = ModelType
 		self.coherence_func = None
 
 		if self.model == "1821":
 			self.cluster = models.ClusterProfile(model="russell")
-			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
+			pl = util.my_powerlaw(n=1.2, xmin=xmin, xmax=xmax)
 			self.coherence_func = pl.rvs
 			self.coherence_r0 = None
 
 		elif self.model == "1275a":
 			self.cluster = models.ClusterProfile(model="a")
-			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
+			pl = util.my_powerlaw(n=1.2, xmin=xmin, xmax=xmax)
 			self.coherence_func = pl.rvs
 			self.coherence_r0 = None
 
 		elif self.model == "1275b":
 			self.cluster = models.ClusterProfile(model="b")
-			pl = util.my_powerlaw(n=1.2, xmin=3.5, xmax=10.0)
+			pl = util.my_powerlaw(n=1.2, xmin=xmin, xmax=xmax)
 			self.coherence_func = pl.rvs
 			self.set_coherence_r0(50.0)
 
@@ -51,6 +51,7 @@ class Survival:
 		'''
 		# this allows for variation of coherence length with radius in model B
 		self.coherence_r0 = r0
+		self.init_model()  # must re-initialise model after r0 is set, see issue #4
 
 	def set_churazov_density(self):
 		'''

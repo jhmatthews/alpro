@@ -159,7 +159,7 @@ class ClusterProfile:
 			self.get_B = self.BendingPL_B
 
 		elif model == "custom":
-			print ("Warning: Custom model specified - need to make sure get_B and density methods are populated!")
+			print ("Warning: Custom model specified - make sure get_B & density methods are populated or domain set manually!")
 
 		else:
 			raise ValueError("ClusterProfile did not understand model type {}".format(model))
@@ -193,9 +193,15 @@ class ClusterProfile:
 
 
 	def Bflat(self):
+		'''
+		uniform magentic field
+		'''
 		return (self.B_rms)
 
 	def nflat(self):
+		'''
+		uniform density
+		'''
 		return (self.n)
 
 	def B_modA(self, r):
@@ -220,6 +226,9 @@ class ClusterProfile:
 		return (B)
 
 	def profile(self, r):
+		'''
+		wrapper to the density and magentic field functions
+		'''
 		return (self.density(r), self.get_B(r))
 
 
@@ -298,6 +307,10 @@ class ClusterFromFile:
 		return (Bz)
 
 	def get_B(self, z):
+		'''
+		get the two perpendicular components of the magnetic field at
+		distance z
+		'''
 		Bx = self.interp_x(z)
 		By = self.interp_y(z)
 		return (Bx, By)
@@ -307,7 +320,7 @@ class ClusterFromFile:
 
 def omega_p(ne):
 	'''
-	calculate the plasma frequency in natural (eV) units 
+	calculate the plasma frequency in natural (eV) units from an electron density
 
 	Parameters:
 		ne 		float/array-like
