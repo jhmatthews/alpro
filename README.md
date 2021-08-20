@@ -1,5 +1,7 @@
 ## ALPro
 
+<img src="https://user-images.githubusercontent.com/3007249/130225478-06619bad-833f-4f91-9797-8ace73c53d7a.png" width="200"/>
+
 Alpro (Axion-Like PROpagation) is a code for solving the equation of motion for a photon-ALP beam with mixing between the photon and ALP states. 
 
 ### Installation
@@ -18,7 +20,7 @@ I have tested with Python 3.7 and later. Module requirements are relatively ligh
 
 ### Documentation
 
-Documentation is hosted on ReadTheDocs. 
+Documentation is hosted on [ReadTheDocs](https://alpro.readthedocs.io/en/latest/). 
 
 ### Release Paper and Contact
 
