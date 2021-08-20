@@ -14,7 +14,7 @@ in the directory. You may need a sudo, or a --user flag, depending on your syste
 
 ### Prerequisites
 
-python module requirements are relatively light, essentially ```matplotlib,numba,numpy,scipy```. Full details can be found in the requirements.txt file, which 
+I have tested with Python 3.7 and later. Module requirements are relatively light, essentially ```matplotlib,numba,numpy,scipy```. Full details can be found in the requirements.txt file. A minimal running environment can be loaded by starting a clean virtual environment with, e.g., ```python3 -m venv /path/to/virtual/env/``` and then running ```pip install -r requirements.txt``` before installing alpro. 
 
 ### Documentation
 
