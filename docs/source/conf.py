@@ -25,7 +25,7 @@ author = 'James Matthews'
 # -- Whether or not to include ToDo notes ---------------------------------
 todo_include_todos = True
 # -- GitHub repo for issues -----------------------------------------------
-issues_github_path = "jhmatthews/alpro"
+# issues_github_path = "jhmatthews/alpro"
 
 
 # -- General configuration ---------------------------------------------------
@@ -38,7 +38,6 @@ extensions = ['sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
     'sphinx.ext.todo',
     'sphinx.ext.autosectionlabel',
-    'sphinx_issues',
 	'nbsphinx',
 	'IPython.sphinxext.ipython_console_highlighting',
     'sphinx.ext.autodoc',
