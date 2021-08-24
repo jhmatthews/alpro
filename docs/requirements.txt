@@ -1,2 +1,5 @@
+sphinx
+sphinx-issues
+ipython
 nbsphinx
-sphinx_issues
+sphinx-rtd-theme
