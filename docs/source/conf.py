@@ -25,7 +25,7 @@ author = 'James Matthews'
 # -- Whether or not to include ToDo notes ---------------------------------
 todo_include_todos = True
 # -- GitHub repo for issues -----------------------------------------------
-issues_github_path = "jhmatthews/alpro"
+# issues_github_path = "jhmatthews/alpro"
 
 
 # -- General configuration ---------------------------------------------------

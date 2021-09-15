@@ -1,0 +1,5 @@
+sphinx
+sphinx-issues
+ipython
+nbsphinx
+sphinx-rtd-theme
