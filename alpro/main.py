@@ -2,7 +2,7 @@ import alpro.models as models
 import numpy as np 
 import alpro
 import alpro.util as util 
-
+import matplotlib.pyplot as plt
 
 class Survival:
 	'''
@@ -60,6 +60,9 @@ class Survival:
 		self.cluster.density = self.cluster.churazov_density
 
 	def init_model(self, lcorr=None):
+		'''
+		initialise the ALP model.  
+		'''
 		if self.coherence_func == None:
 			self.coherence_func = lcorr
 
@@ -113,8 +116,7 @@ class Survival:
 		return (P, P_radial)
 
 
-	def propagate(self, domain, energies, pol="both", overwrite = False, 
-		          domain_temp = None, pol_matrix = None):
+	def propagate(self, domain, energies, pol="both", pol_matrix = None):
 		'''
 		Propagate an unpolarised beam through a domain and 
 		calculate conversion into axion-like particles 
@@ -129,8 +131,16 @@ class Survival:
 						array of photon energies in electron volts 
 
 			pol 		string (optional)
-						
+						which polarization state to consider. 
+						must be 'x', 'y' or 'both'
 
+			pol_matrix 	bool or Nonetype
+						whether to use the polarization matrix pr 
+						just average the two polarization states. 
+						if ==None, then use the value stored in self.pol_matrix_bool
+						Both produce the same results but using the polarization
+						matrix could be used to future to predict polarization
+						signatures. 
 		'''
 
 		# decide which polarization states to compute based on pol kwarg
@@ -149,6 +159,7 @@ class Survival:
 		if pol_matrix == None:
 			pol_matrix = self.pol_matrix_bool
 
+		# set up the initial state vectors depending on the mode
 		if pol_matrix:
 			init_x, init_y, _ = pure_pol_vectors_like(energies)
 			calculate_P = alpro.get_P_matrix
@@ -166,6 +177,7 @@ class Survival:
 		
 		self.P_radial = np.zeros( (len(domain.r),len(energies)) )
 		
+		# loop over the domain 
 		for i in range(len(domain.r)):
 			L = domain.deltaL[i]
 			B = domain.B[i]
@@ -187,12 +199,24 @@ class Survival:
 			elif ypol:
 				Ptot = P_y
 
+			# also store the radial profile
 			self.P_radial[i,:] = Ptot
 
 		self.P = Ptot
 		self.energies = energies
 
 		return (self.P, self.P_radial)
+
+	def default_plot(self, figsize=(8,6), plot_kwargs={"c": "C0"}):
+		'''
+		make a plot of the survival probability
+		'''
+		fig = plt.figure(figsize=figsize)
+		plt.plot(self.energies, self.P, **plot_kwargs)
+		plt.semilogx()
+		plt.ylabel(r"$P_{\gamma\gamma}$", fontsize=18)
+		plt.xlabel("$E$ (eV)", fontsize=18)
+		return (fig)
 
 
 def pure_pol_vectors_like(arr):
