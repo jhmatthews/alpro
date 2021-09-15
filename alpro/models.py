@@ -560,19 +560,25 @@ class FieldModel:
 		# get the x and y components and increment r
 		#Bx_array.append(B * np.sin(theta2))
 		#y_array.append(B * np.cos(theta2))
-		self.Bx = Btot * np.sin(theta) * np.cos(phi)
-		self.By = Btot * np.sin(theta) * np.sin(phi)
+		self.Bx, self.By, self.Bz = self.get_B_comp_from_angles(Btot, theta, phi)
+		#self.Bx = Btot * np.sin(theta) * np.cos(phi)
+		#self.By = Btot * np.sin(theta) * np.sin(phi)
+		self.theta = theta
 
 		# note B is actually Bperp
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
 		self.phi = np.arctan2(self.Bx,self.By) 
 		#self.phi = phi
 
-		self.Bz = Btot * np.cos(theta) 
 		self.rm = self.get_rm()
 		self.omega_p = omega_p(self.ne)
 		#print (self.rm)
 
+	def get_B_comp_from_angles(self, Btot, theta, phi):
+		Bx = Btot * np.sin(theta) * np.cos(phi)
+		By = Btot * np.sin(theta) * np.sin(phi)
+		Bz = Btot * np.cos(theta) 
+		return (Bx, By, Bz)
 
 
 	def resonance_prune(self, mass, threshold = 0.1, refine = 50, required_res = 3):
@@ -619,7 +625,7 @@ class FieldModel:
 			closest1 = np.where(delta > 0, delta, np.inf).argmin()
 			closest2 = np.where(-delta > 0, -delta, np.inf).argmin()
 			ind = np.min((closest1, closest2))
-			print (closest1, closest2)
+			#print (closest1, closest2)
 
 			# new r array 
 			r_insert = np.linspace(self.r[ind], self.r[ind + 1], refine + 1)
@@ -659,7 +665,7 @@ class FieldModel:
 			domain_to_return.omega_p = omega_p(domain_to_return.ne)
 			domain_to_return.deltaL = np.concatenate( (deltaL[:ind_new], deltaL[ind_new+ndiscard:]))
 			N = len(domain_to_return.r)
-			print (N, len(self.r))
+			#print (N, len(self.r))
 			assert (N == (len(self.r) + refine - ndiscard - 1))
 
 			# things that remain constant across resampling
@@ -671,7 +677,7 @@ class FieldModel:
 				to_concat = (arr[:ind], arr_insert, arr[ind + ndiscard:])
 				arr = np.concatenate(to_concat)
 				setattr(domain_to_return, a, arr)
-				assert (len(getattr(domain_to_return, a)) == N)
+				assert (len(getattr(domain_to_return, a)) == N, "incorrect array lengths after pruning -- could mean domain was modified pre-pruning")
 
 
 
