@@ -14,7 +14,6 @@ The code is relatively simple, and the documentation at this stage is quite rudi
 
    install
    description
-   test
    examples
    tests
    functions
