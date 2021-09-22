@@ -453,17 +453,24 @@ class FieldModel:
 		interp_x = interp1d(interp_array_r, interp_Bx, **interp1d_kwargs)
 		interp_y = interp1d(interp_array_r, interp_By, **interp1d_kwargs)
 
+		interp_Bz = np.concatenate( (self.Bz[0:1], self.Bz, self.Bz[-1:]))
+		interp_z = interp1d(interp_array_r, interp_Bz, **interp1d_kwargs)
+
 		# populate new values 
 		self.rcen = 0.5 * (new_redge[1:] + new_redge[:-1])
 		self.Bx = interp_x(self.rcen)
 		self.By = interp_y(self.rcen)
+		self.Bz = interp_z(self.rcen)
 		self.r = new_redge[:-1]
 		self.deltaL = new_redge[1:] - new_redge[:-1]
 		self.B = np.sqrt(self.Bx**2  + self.By **2)
 		self.phi = np.arctan2(self.Bx,self.By) 
 		if profile:
 			self.ne, _ = self.profile(self.rcen)
-		#else:
+		else:
+			interp_ne = np.concatenate( (self.ne[0:1], self.ne, self.ne[-1:]))
+			interp_n = interp1d(interp_array_r, interp_ne, **interp1d_kwargs)
+			self.ne = interp_n(self.rcen)
 
 
 
