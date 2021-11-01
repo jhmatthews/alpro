@@ -109,7 +109,7 @@ def churazov_density(r):
 
 class ClusterProfile:
 	'''
-	container for a magentic field and density profile for a cluster
+	container for a magnetic field and density profile for a cluster
 	'''
 	def __init__(self, model="a", plasma_beta = 100, B_rms=None, n=None):
 		
@@ -164,6 +164,12 @@ class ClusterProfile:
 		else:
 			raise ValueError("ClusterProfile did not understand model type {}".format(model))
 
+	def beta_r(self, r):
+		if callable(self.plasma_beta):
+			return (self.plasma_beta(r))
+		else:
+			return (self.plasma_beta)
+
 	def churazov_density(self, r):
 		return (churazov_density(r))
 
@@ -212,7 +218,8 @@ class ClusterProfile:
 			r 	float
 				distance from cluster centre in kpc
 		'''
-		return (self.B0 * (self.density(r) / self.n0)**self.B_exponent)
+		beta = self.beta_r(r)
+		return (self.B0 * (self.density(r) / self.n0)**self.B_exponent * 100.0 / beta)
 
 	def B_modB(self, r, B25=7.5e-6):
 		'''
@@ -222,7 +229,8 @@ class ClusterProfile:
 			r 	float
 				distance from cluster centre in kpc
 		'''
-		B = B25 * np.sqrt(self.density(r) / self.n25 * 100.0 / self.plasma_beta)
+		beta = self.beta_r(r)
+		B = B25 * np.sqrt(self.density(r) / self.n25 * 100.0 / beta)
 		return (B)
 
 	def profile(self, r):
