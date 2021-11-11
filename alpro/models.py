@@ -194,7 +194,7 @@ class ClusterProfile:
 		numer = r**-self.a_low
 		denom = 1 + (r/self.r_bend)**(self.a_high-self.a_low)
 		P = self.P0 * (numer/denom) 
-		B = np.sqrt(P * 4.0 * np.pi / self.plasma_beta)
+		B = np.sqrt(P * 4.0 * np.pi / self.beta_r(r))
 		return B
 
 
