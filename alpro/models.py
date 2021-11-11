@@ -438,8 +438,9 @@ class FieldModel:
 
 		return (prefactor * integral)
 
-	def domain_from_slice(self, Cluster, deltaL=1.0, Lmax=500.0):
-		self.r = np.arange(0, Lmax, deltaL)
+	def domain_from_slice(self, Cluster, deltaL=1.0, Lmax=500.0, r0=0.0):
+		npoints = int((Lmax - r0) // deltaL)
+		self.r = np.linspace(r0, Lmax - deltaL, npoints)
 		self.deltaL = np.ones_like(self.r) * deltaL
 		self.rcen = self.r + (0.5 * self.deltaL)
 		self.Bx, self.By = Cluster.get_B(self.rcen)
