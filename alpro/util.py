@@ -134,6 +134,8 @@ def set_default_plot_params(tex=False, dpi=300):
 		plt.rcParams["text.usetex"] = "True"
 		plt.rcParams['font.family']='serif'
 
+	plt.rcParams['axes.labelsize'] = 16
+	plt.rcParams['figure.figsize'] = [6.4, 4.8]
 	plt.rcParams['savefig.dpi'] = dpi
 	plt.rcParams['xtick.labelsize']=14
 	plt.rcParams['ytick.labelsize']=14

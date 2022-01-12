@@ -424,7 +424,7 @@ class FieldModel:
 		self.B = np.ones_like(self.r) * B
 
 
-	def get_rm(self):
+	def get_rm(self, cell_centered=True):
 		r'''
 		Calculate the rotation measure of the field model using Simpson integration.
 		Equation is :math:`RM= 812 \int n_e B_z dz` with the field in microGauss
@@ -434,7 +434,11 @@ class FieldModel:
 		'''
 		#prefactor = (unit.e ** 3) / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
 		prefactor = 812.0
-		integral = simps(self.rcen, self.ne * self.Bz * 1e6)
+		if cell_centered:
+			r = self.rcen
+		else:
+			r = self.r
+		integral = simps(self.ne * self.Bz * 1e6, r)
 
 		return (prefactor * integral)
 

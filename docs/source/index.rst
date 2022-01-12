@@ -8,15 +8,17 @@ The code is relatively simple, and the documentation at this stage is quite rudi
 
 .. toctree::
    :titlesonly:
-   :maxdepth: 2
-   :caption: Contents:
    :glob:
+   :hidden:
+   :caption: Documentation
 
    install
    description
    examples
    tests
    functions
+   fourier
+   *
 
 
 Indices and tables
