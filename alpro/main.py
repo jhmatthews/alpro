@@ -203,7 +203,7 @@ class Survival:
 				init_x = np.zeros( (len(energies),3), dtype=np.complex128)
 				init_x[:,0] = 1.0
 
-			calculate_P = alpro.get_P
+			calculate_P = self.get_P
 
 		
 		self.P_radial = np.zeros( (len(domain.r),len(energies)) )

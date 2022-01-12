@@ -9,4 +9,5 @@ in the code most closely follows the former, but notation often matches the latt
 .. toctree::
    :glob:
 
-   description/*
+   description/theory
+   description/fourier

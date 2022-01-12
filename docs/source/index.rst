@@ -16,9 +16,9 @@ The code is relatively simple, and the documentation at this stage is quite rudi
    description
    examples
    tests
+   published 
+   acknowledge
    functions
-   fourier
-   *
 
 
 Indices and tables
