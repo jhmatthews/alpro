@@ -87,6 +87,9 @@ class Survival:
 		elif self.model == "uniform":
 			self.domain.single_box(phi, B, L, ne, N=1)
 
+	def initialise_domain(self, profile = None):
+		self.domain = models.FieldModel(profile = profile)
+
 
 	# def setup_cell_model(self):
 
@@ -206,10 +209,10 @@ class Survival:
 			calculate_P = self.get_P
 
 		
-		self.P_radial = np.zeros( (len(domain.r),len(energies)) )
+		self.P_radial = np.zeros( (len(domain.deltaL),len(energies)) )
 		
 		# loop over the domain 
-		for i in range(len(domain.r)):
+		for i in range(len(domain.deltaL)):
 			L = domain.deltaL[i]
 			B = domain.B[i]
 			phi = domain.phi[i] * np.ones_like(energies)
