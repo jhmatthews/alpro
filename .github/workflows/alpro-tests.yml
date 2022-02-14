@@ -1,6 +1,6 @@
 # Run basic tests for alpro
 
-name: Python application
+name: ALPro tests
 
 on:
   push:
