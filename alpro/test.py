@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import numpy as np 
-import constants as c
 import alpro 
 import unittest
 import os
