@@ -50,6 +50,11 @@ class Survival:
 
 		self.pol_matrix_bool = pol_matrix
 
+	def set_coherence_pl(self, n=1.2, xmin=3.5, xmax=10.0, r0=None):
+		pl = util.my_powerlaw(n=n, xmin=xmin, xmax=xmax)
+		self.coherence_func = pl.rvs
+		self.set_coherence_r0(r0)
+
 	def show_available_models(self):
 	 	print (self.available_models)
 
@@ -100,10 +105,7 @@ class Survival:
 		else: 
 			self.domain.create_box_array(L, random_seed, self.coherence_func, r0=r0, cell_centered=cell_centered) 
 
-		if propagation == "pure":
-			propagation_func = self.propagate_pure
-		else:
-			propagation_func = self.propagate
+		propagation_func = self.propagate
 
 		# only compute curve if RM Acceptable 
 		#if self.domain.rm < rm_reject:

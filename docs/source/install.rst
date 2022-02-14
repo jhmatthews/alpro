@@ -20,4 +20,16 @@ To check ALPro has installed, try importing it as a module
 
     python -c "import alpro"
 
+A basic test of the code can be run using 
 
+.. code:: bash
+
+    python -m unittest alpro.test
+
+if all goes well you should see output like 
+
+	....
+	----------------------------------------------------------------------
+	Ran 4 tests in 4.447s
+
+	OK

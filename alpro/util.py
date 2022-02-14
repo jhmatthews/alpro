@@ -96,12 +96,11 @@ def theta(energy, B, ne, mass, g_a):
 	Calculate capital Theta for a B field in Gauss, a mass in eV and a photon energy in eV
 	:math:`\Theta = \frac{2 B_\perp \omega g_a}{m_A^2 - \omega_p^2}`.
 	'''
-	B *= unit.unit_gauss_natural
+	Bnat = B * unit.unit_gauss_natural
 	omega_p = np.sqrt (4.0 * np.pi * unit.e * unit.e * ne /
 	  unit.melec) * unit.hbar_ev;
-	theta = 2.0 * B * energy * g_a 
+	theta = 2.0 * Bnat * energy * g_a 
 	m_effsq = (mass * mass) - (omega_p * omega_p)
-	#print (mass, omega_p)
 	theta /= m_effsq
 	return (theta)
 

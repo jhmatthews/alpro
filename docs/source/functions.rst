@@ -10,3 +10,6 @@ Functions
 
 .. automodule:: alpro.util
     :members:
+
+.. automodule:: alpro.parallel
+    :members:
