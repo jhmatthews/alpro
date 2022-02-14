@@ -2,6 +2,8 @@
 
 [![Documentation Status](https://readthedocs.org/projects/alpro/badge/?version=latest)](https://alpro.readthedocs.io/en/latest/?badge=latest)
 [![ALPro tests](https://github.com/jhmatthews/alpro/actions/workflows/alpro-tests.yml/badge.svg)](https://github.com/jhmatthews/alpro/actions/workflows/alpro-tests.yml)
+[![DOI](https://zenodo.org/badge/218793537.svg)](https://zenodo.org/badge/latestdoi/218793537)
+
 
 <img src="https://user-images.githubusercontent.com/3007249/130225478-06619bad-833f-4f91-9797-8ace73c53d7a.png" width="200"/>
 
