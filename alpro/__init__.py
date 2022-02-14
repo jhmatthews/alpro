@@ -1,4 +1,4 @@
-import alprocore as core
+# import alprocore as core
 from .alpro_numba import *
 from .main import *
 import alpro.util as util
