@@ -3,6 +3,7 @@ import numpy as np
 import alpro
 import alpro.util as util 
 import matplotlib.pyplot as plt
+import alpro.fourier as fourier
 
 class Survival:
 	'''
@@ -122,7 +123,8 @@ class Survival:
 		'''
 		Set the ALP coupling constant and mass
 
-		Parameters:
+		Parameters
+		-----------
 			g_a 		float 
 						ALP coupling constant in units set by invgev boolean
 			mass 		float 
@@ -151,7 +153,8 @@ class Survival:
 		Propagate an unpolarised beam through a domain and 
 		calculate conversion into axion-like particles 
 
-		Parameters:
+		Parameters
+		-----------
 			domain 		object
 						an alpro.models.FieldModel instance containing
 						magnetic field components, individual cell sizes
@@ -266,6 +269,65 @@ class Survival:
 	def analytic_pga(self, energies):
 		P = util.P_gamma_analytic(energies, self.domain.B, self.domain.ne, self.mass, self.g_a, self.domain.deltaL)
 		return P
+
+	def propagate_fourier(self, domain = None, energies = None, pol = "both", mode = "auto", N=100000, f_res = 200):
+		'''
+		Propagate an unpolarised beam through a domain and 
+		calculate conversion into axion-like particles using the fourier formalism
+
+		Parameters
+		-----------
+			domain 		object
+						an alpro.models.FieldModel instance containing
+						magnetic field components, individual cell sizes
+						and densities. default is 
+						the domain stored in the class instance. 
+
+			energies	array-like
+						array of photon energies in electron volts. default is 
+						the array stored in the class instance. 
+
+			pol 		string (optional)
+						which polarization state to consider. 
+						must be 'x', 'y' or 'both'
+		'''
+		self.domain.omega_p = alpro.models.omega_p(self.domain.ne)
+
+		if self.mass > np.max(self.domain.omega_p):
+			regime = "massive"
+		elif self.mass < np.min(self.domain.omega_p):
+			regime = "massless"
+		else:
+			regime = "resonant"
+
+		options = ["auto", "massive", "massless"]
+		assert (mode in ["auto", "massive", "massless"]), ("mode must be in", options)
+
+		if mode == "auto":
+			if regime == "resonant":
+				print ("Warning! resonant crossing point found.")
+				print ("Adopting massive ALP regime for calculation with inaccurate results")
+				print ("m_a: {:.2e} eV, plasma frequency range: {.2e} to {.2e} eV".format(self.mass, np.min(self.domain.omega_p), np.max(self.domain.omega_p)))
+				regime_to_use = "massive"
+			else:
+				regime_to_use = regime 
+
+		elif mode != regime:
+			print ("Warning! forced {} ALP calculation in real {} ALP regime!".format(mode, regime))
+			print ("m_a: {:.2e} eV, plasma frequency range: {:.2e} to {:.2e} eV".format(self.mass, np.min(self.domain.omega_p), np.max(self.domain.omega_p)))
+			regime_to_use = mode
+
+		else:
+			regime_to_use = mode
+
+		if regime_to_use == "massless":
+			E1, P1 = fourier.pga_massless(self,  pad_factor = 40.0, Nsamples = N, pol = pol)
+		elif regime_to_use == "massive":
+			E1, P1 = fourier.pga_massive(self, f_res = f_res, Nsamples = N, pol = pol)
+
+		return (E1, 1 - P1)
+
+
 
 
 

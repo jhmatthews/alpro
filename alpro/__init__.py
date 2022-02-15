@@ -4,7 +4,8 @@ from .main import *
 import alpro.util as util
 import alpro.test as test
 import alpro.pure as pure 
-# import alpro.fourier_core as fourier
+import alpro.fourier as fourier
+import alpro.fourier_core as fourier_core
 
 __author__ = "James Matthews"
 __email__ = "matthews@ast.cam.ac.uk"

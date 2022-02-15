@@ -11,11 +11,11 @@ include_dir = 'gsl_include'
 #os.environ["CFLAGS"] = "-O0"
 
 # define the extension module
-alpro_module = Extension('alprocore',
-                    include_dirs=[numpy.get_include(), include_dir],
-                    libraries = libraries,
-                    library_dirs = library_dirs,
-                    sources = ['alpro/core/alpro.c', 'alpro/core/alpro_matrix.c'])
+# alpro_module = Extension('alprocore',
+#                     include_dirs=[numpy.get_include(), include_dir],
+#                     libraries = libraries,
+#                     library_dirs = library_dirs,
+#                     sources = ['alpro/core/alpro.c', 'alpro/core/alpro_matrix.c'])
 
 # data files 
 data_files = ["data/*.dat"]
@@ -27,7 +27,6 @@ setup(name = 'alpro',
 	  description = 'Propagation of axion-like particles through magnetic fields',
 	  author_email = 'matthews@ast.cam.ac.uk',
 	  author = 'James Matthews',
-	  ext_modules=[alpro_module], 
 	  py_modules=["alpro"],
 	  package_data = {'alpro': data_files},
 	  include_package_data=True)  

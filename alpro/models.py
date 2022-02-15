@@ -422,6 +422,9 @@ class FieldModel:
 		self.ne = np.ones_like(self.r) * ne 
 		self.phi = np.ones_like(self.r) * phi
 		self.B = np.ones_like(self.r) * B
+		self.Bx = self.B * np.sin(self.phi)
+		self.By = self.B * np.cos(self.phi)
+		self.Bz = np.zeros_like(self.phi)
 
 
 	def get_rm(self, cell_centered=True):
