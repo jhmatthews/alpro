@@ -42,9 +42,8 @@ class Survival:
 		elif self.model not in self.available_models:
 			raise ValueError("Model type not recognised, must be one of:", self.available_models)
 
-		if implementation == "c":
-			self.get_P = alpro.core.get_P 
-		elif implementation == "python":
+		# allow implementation to be pure python 
+		if implementation == "python":
 			self.get_P = alpro.pure.get_P
 		elif implementation == "numba":
 			self.get_P = alpro.get_P
@@ -316,7 +315,7 @@ class Survival:
 		---------
 			E 			array-like
 						Energy in eV
-						
+
 			P 			array-like 
 						conversion probability as a function of energy 
 		'''
