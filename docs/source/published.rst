@@ -13,7 +13,7 @@ ALPro has been used in the following publications to date:
 "How do magnetic field models affect astrophysical limits on light axion-like particles? An X-ray case study with NGC 1275", ApJ submitted.
 
 
-The notebooks below allow one to reproduce certain figures from the papers using ALPro. 
+The notebooks below allow one to reproduce certain figures from the papers using ALPro (I will add to this!)
 
 .. nbgallery::
    examples/Matthews2022

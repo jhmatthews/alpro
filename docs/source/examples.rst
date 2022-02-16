@@ -8,5 +8,5 @@ To learn how to use Alpro, the easiest thing to do is use these notebooks and tu
    examples/cell
    examples/custom
    examples/libanov
-   examples/performance
+   examples/Performance
    examples/fourier
