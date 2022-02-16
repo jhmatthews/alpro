@@ -176,6 +176,15 @@ class Survival:
 						Both produce the same results but using the polarization
 						matrix could be used to future to predict polarization
 						signatures. 
+
+		Returns 
+		----------
+			P 			array-like 
+						conversion probability as a function of energy 
+
+			Pradial 	array-like (2D)
+						conversion probability as a function of energy and distance 
+						(evaluated at cell centers)
 		'''
 		if domain is None:
 			domain = self.domain
@@ -270,7 +279,7 @@ class Survival:
 		P = util.P_gamma_analytic(energies, self.domain.B, self.domain.ne, self.mass, self.g_a, self.domain.deltaL)
 		return P
 
-	def propagate_fourier(self, domain = None, energies = None, pol = "both", mode = "auto", N=100000, f_res = 200):
+	def propagate_fourier(self, domain = None, pol = "both", mode = "auto", N=100000, f_res = 2000, pad_factor = 40.0):
 		'''
 		Propagate an unpolarised beam through a domain and 
 		calculate conversion into axion-like particles using the fourier formalism
@@ -283,19 +292,42 @@ class Survival:
 						and densities. default is 
 						the domain stored in the class instance. 
 
-			energies	array-like
-						array of photon energies in electron volts. default is 
-						the array stored in the class instance. 
-
 			pol 		string (optional)
 						which polarization state to consider. 
 						must be 'x', 'y' or 'both'
-		'''
-		self.domain.omega_p = alpro.models.omega_p(self.domain.ne)
 
-		if self.mass > np.max(self.domain.omega_p):
+			mode 		string (optional)
+						How to decide which Fourier formalism to use. The default, "auto" is recommended,
+						in which case the decision is made by comparing the plasma frequency and the mass.
+						However, you can force a calculation in the massive or massless regime. 
+
+			N 			int
+						How to decide which Fourier formalism to use. The default, "auto" is recommended,
+						in which case the decision is made by comparing the plasma frequency and the mass.
+						However, you can force a calculation in the massive or massless regime. 
+						Recommended value around 1e4 to 1e5. 
+
+			f_res 		int 
+						factor by which to resample the resolution of the grid compared to the original resolution.
+						The domain is zero padded out to a factor (N/f_res) times the original size. 
+						Recommended value is around N/40.  
+
+		Returns 
+		---------
+			E 			array-like
+						Energy in eV
+						
+			P 			array-like 
+						conversion probability as a function of energy 
+		'''
+		if domain is None:
+			domain = self.domain
+
+		domain.omega_p = alpro.models.omega_p(domain.ne)
+
+		if self.mass > np.max(domain.omega_p):
 			regime = "massive"
-		elif self.mass < np.min(self.domain.omega_p):
+		elif self.mass < np.min(domain.omega_p):
 			regime = "massless"
 		else:
 			regime = "resonant"
@@ -307,25 +339,28 @@ class Survival:
 			if regime == "resonant":
 				print ("Warning! resonant crossing point found.")
 				print ("Adopting massive ALP regime for calculation with inaccurate results")
-				print ("m_a: {:.2e} eV, plasma frequency range: {.2e} to {.2e} eV".format(self.mass, np.min(self.domain.omega_p), np.max(self.domain.omega_p)))
+				print ("m_a: {:.2e} eV, plasma frequency range: {.2e} to {.2e} eV".format(self.mass, np.min(domain.omega_p), np.max(domain.omega_p)))
 				regime_to_use = "massive"
 			else:
 				regime_to_use = regime 
 
 		elif mode != regime:
 			print ("Warning! forced {} ALP calculation in real {} ALP regime!".format(mode, regime))
-			print ("m_a: {:.2e} eV, plasma frequency range: {:.2e} to {:.2e} eV".format(self.mass, np.min(self.domain.omega_p), np.max(self.domain.omega_p)))
+			print ("m_a: {:.2e} eV, plasma frequency range: {:.2e} to {:.2e} eV".format(self.mass, np.min(domain.omega_p), np.max(domain.omega_p)))
 			regime_to_use = mode
 
 		else:
 			regime_to_use = mode
 
 		if regime_to_use == "massless":
-			E1, P1 = fourier.pga_massless(self,  pad_factor = 40.0, Nsamples = N, pol = pol)
+			E, P = fourier.pga_massless(self,  f_res = f_res, Nsamples = N, pol = pol)
 		elif regime_to_use == "massive":
-			E1, P1 = fourier.pga_massive(self, f_res = f_res, Nsamples = N, pol = pol)
+			E, P = fourier.pga_massive(self, f_res = f_res, Nsamples = N, pol = pol)
 
-		return (E1, 1 - P1)
+		self.P = P
+		self.energies = E
+
+		return (E, P)
 
 
 

@@ -28,7 +28,7 @@ class RunTest(unittest.TestCase):
             ax.set_yscale("log")
         plt.title(title)
 
-    def test_analytic(self):
+    def test_analytic(self, subplot=321):
 
         # set up uniform modek 
         s = alpro.Survival("uniform")
@@ -43,9 +43,9 @@ class RunTest(unittest.TestCase):
 
         # compare results
         self.assertTrue (np.allclose(P, prediction))
-        self.make_plot(energy_x, prediction, P, subplot=321, logy=True, title="Analytic")
+        self.make_plot(energy_x, prediction, P, subplot=subplot, logy=True, title="Analytic")
 
-    def test_discretise(self):
+    def test_discretise(self, subplot=322):
 
         # set up uniform modek 
         s1 = alpro.Survival("uniform")
@@ -63,13 +63,14 @@ class RunTest(unittest.TestCase):
 
         # compare results
         self.assertTrue (np.allclose(P1, P2))
-        self.make_plot(energy_x, P1, P2, subplot=322, logy=True, title="Discretisation")
+        self.make_plot(energy_x, P1, P2, subplot=subplot, logy=True, title="Discretisation")
 
-    def test_marsh(self):
+    def test_marsh(self, subplot=323):
 
         # load data from Marsh code
         folder = os.path.dirname(alpro.__file__)
         energies_m, P_m = np.genfromtxt("{}/data/marsh_test.dat".format(folder), unpack=True)
+        P_m = 1.0 - P_m
 
         s = alpro.Survival("libanov")
         s.init_model()
@@ -79,11 +80,11 @@ class RunTest(unittest.TestCase):
         s.domain.rm = 0.0
 
         # Marsh energies are in GeV
-        P = 1.0 - s.get_curve(energies_m*1e9, 1.0, 93.0, r0=0.0)
-        self.assertTrue (np.allclose(P, P_m, rtol=4e-3))
-        self.make_plot(energies_m, P_m, P, subplot=323, title="Libanov Field")
+        P = s.get_curve(energies_m*1e9, 1.0, 93.0, r0=0.0)
+        self.assertTrue (np.allclose(1-P, 1-P_m, rtol=4e-3))
+        self.make_plot(energies_m, P_m, P, subplot=subplot, title="Libanov Field")
 
-    def test_fourier_single(self):
+    def test_fourier_single(self, subplot=324):
 
         # set up uniform modek 
         s1 = alpro.Survival("uniform")
@@ -100,44 +101,53 @@ class RunTest(unittest.TestCase):
         #P1, _ = s1.propagate(s1.domain, E, pol="y")
 
         #self.assertTrue (np.allclose(1-P1[E>1e4], prediction[E>1e4], rtol=2))
-        self.make_plot(E, prediction, 1-P1, subplot=324, title="Fourier Single", logy = True)
+        self.make_plot(E, prediction, P1, subplot=subplot, title="Fourier Single", logy = True)
 
-    def test_fourier_massive(self):
+    def test_fourier_massive(self, subplot=325):
 
-        # set up uniform modek 
+        # set up cell model with uniform cell sizes
         s1 = alpro.Survival("1275b")
         s1.init_model()
         s1.set_params(1e-14 * 1e-9, 1e-9)
-        s1.domain.create_box_array(100.0, 0, s1.coherence_func, r0=0)
+        s1.set_coherence_r0(None)
+        s1.domain.create_box_array(100.0, 0, 10.0, r0=0)
+        #print (s1.domain.deltaL)
 
         s2 = alpro.Survival("1275b")
         s2.init_model()
         s2.set_params(1e-14 * 1e-9, 1e-9)
-        s2.domain.create_box_array(100.0, 0, s2.coherence_func, r0=0)
+        s2.set_coherence_r0(None)
+        s2.domain.create_box_array(100.0, 0, 10.0, r0=0)
+        #print (s2.domain.deltaL)
 
-        E, P2 = s2.propagate_fourier(s2.domain, pol="both", mode="auto", N=10000, f_res = 2000)
+        E, P2 = s2.propagate_fourier(s2.domain, pol="both", mode="auto", N=100000, f_res = 2000)
         P1, _ = s1.propagate(s1.domain, E, pol="both")
 
-        #self.assertTrue (np.allclose(P1, P2, rtol=0.1))
-        self.make_plot(E, P1, 1-P2, subplot=325, title="Fourier Massive", logy = False)
+        select = (P1 > 1e-7)
+        self.assertTrue (np.allclose(P1[select], P2[select], rtol=1e-2))
+        self.make_plot(E, P1, P2, subplot=subplot, title="Fourier Massive", logy = True)
+        #plt.ylim(1e-9,2)
 
-    def test_fourier_massless(self):
+    def test_fourier_massless(self, subplot=326):
 
+        # set up cell model with uniform cell sizes
         s1 = alpro.Survival("1275b")
         s1.init_model()
         s1.set_params(1e-14 * 1e-9, 1e-13)
-        s1.domain.create_box_array(1800.0, 0, s1.coherence_func, r0=0)
+        s1.set_coherence_r0(None)
+        s1.domain.create_box_array(100.0, 0, 10.0, r0=0)
 
         s2 = alpro.Survival("1275b")
         s2.init_model()
         s2.set_params(1e-14 * 1e-9, 1e-13)
-        s2.domain.create_box_array(1800.0, 0, s2.coherence_func, r0=0)
+        s2.set_coherence_r0(None)
+        s2.domain.create_box_array(100.0, 0, 10.0, r0=0)
 
-        E, P2 = s2.propagate_fourier(s2.domain, pol="both", mode="massless", N=20000, f_res = 2000)
+        E, P2 = s2.propagate_fourier(s2.domain, pol="both", mode="massless", N=10000, f_res = 200)
         P1, _ = s1.propagate(s1.domain, E, pol="both")
 
         # self.assertTrue (np.allclose(P1, P2, rtol=0.1))
-        self.make_plot(E, P1, 1-P2, subplot=326, title="Fourier Massless", logy = False)
+        self.make_plot(E, P1, P2, subplot=subplot, title="Fourier Massless", logy = True)
 
     def title_string(self):
         t = """ALPro version {}

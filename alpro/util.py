@@ -96,6 +96,14 @@ def theta(energy, B, ne, mass, g_a):
 	Calculate capital Theta for a B field in Gauss, a mass in eV and a photon energy in eV
 	:math:`\Theta = \frac{2 B_\perp \omega g_a}{m_A^2 - \omega_p^2}`.
 	'''
+
+	# deal with the case where energy is infinite by setting to 10^50 eV
+	# if np.isscalar(energy):
+	# 	if np.isinf(energy):
+	# 		energy = 1e50
+	# else:
+	# 	energy[np.isinf(energy)] = 1e50
+
 	Bnat = B * unit.unit_gauss_natural
 	omega_p = np.sqrt (4.0 * np.pi * unit.e * unit.e * ne /
 	  unit.melec) * unit.hbar_ev;
@@ -121,9 +129,19 @@ def P_gamma_analytic(energy, B, ne, mass, g_a, L):
 	'''
 	delta = delta_eff(energy, ne, mass)
 	th = theta(energy, B, ne, mass, g_a)
-	phase = delta * np.sqrt(1.0 + th**2) * L * unit.kpc * unit.unit_length_natural
-	amplitude = th**2 / (1.0 + th**2)
-	sin_term = np.sin(phase)
+
+	# deal with the case where energy is infinite by silencing ZeroDivision warning
+	if np.any(np.isinf(energy)):
+		with np.errstate(invalid='ignore'):
+			phase = delta * L * unit.kpc * unit.unit_length_natural * np.sqrt(1.0 + th**2) 
+			amplitude = th**2 / (1.0 + th**2)
+
+		sin_term = np.sin(phase)
+	else:
+		phase = delta * np.sqrt(1.0 + th**2) * L * unit.kpc * unit.unit_length_natural
+		amplitude = th**2 / (1.0 + th**2)
+		sin_term = np.sin(phase)
+
 	return (amplitude * sin_term * sin_term)
 
 

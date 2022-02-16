@@ -15,9 +15,8 @@ if all goes well you should see output like
 
 This test will also create a figure with a filename like `Test_16-02-2022.png`, which corresponds to the date of the test. 
 
-The notebooks below provide further details of some these tests with descriptions and instructions on how to run them individually. 
+The notebook below provides further details of some these tests with descriptions and instructions on how to run them individually. 
 
-.. toctree::
-   :glob:
+.. nbgallery::
 
-   tests/*
+   tests/tests

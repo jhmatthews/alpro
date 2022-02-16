@@ -3,6 +3,39 @@ import alpro
 from scipy.integrate import simps
 from scipy.interpolate import interp1d 
 
+def resample_fourier(new_redge):
+        '''
+        Resample a box array on to a new 1D grid using 1d interpolation.
+        Must be called after the Bx, By, r arrays are already populated.
+        '''
+        interp1d_kwargs={"kind": "nearest", "fill_value": 0}
+
+        interp_array_r = np.concatenate( (self.r[0:1], self.rcen, self.r[-1:] + self.deltaL[-1:]))
+        interp_Bx = np.concatenate( (self.Bx[0:1], self.Bx, self.Bx[-1:]))
+        interp_By = np.concatenate( (self.By[0:1], self.By, self.By[-1:]))
+        interp_x = interp1d(interp_array_r, interp_Bx, **interp1d_kwargs)
+        interp_y = interp1d(interp_array_r, interp_By, **interp1d_kwargs)
+
+        interp_Bz = np.concatenate( (self.Bz[0:1], self.Bz, self.Bz[-1:]))
+        interp_z = interp1d(interp_array_r, interp_Bz, **interp1d_kwargs)
+
+        # populate new values 
+        self.rcen = 0.5 * (new_redge[1:] + new_redge[:-1])
+        self.Bx = interp_x(self.rcen)
+        self.By = interp_y(self.rcen)
+        self.Bz = interp_z(self.rcen)
+        self.r = new_redge[:-1]
+        self.deltaL = new_redge[1:] - new_redge[:-1]
+        self.B = np.sqrt(self.Bx**2  + self.By **2)
+        self.phi = np.arctan2(self.Bx,self.By) 
+        if profile:
+            self.ne, _ = self.profile(self.rcen)
+        else:
+            interp_ne = np.concatenate( (self.ne[0:1], self.ne, self.ne[-1:]))
+            interp_n = interp1d(interp_array_r, interp_ne, **interp1d_kwargs)
+            self.ne = interp_n(self.rcen)
+
+
 def get_phi_numerical(s):
     '''
     Calculate phi numerically from an alpro.Survival class instance 
@@ -57,7 +90,7 @@ def pga_massive(s, Nsamples=200000, f_res = 4, pol = "both", return_autocorr=Fal
         E = Ex
         P = 0.5 * (Px + Py)
 
-    r_to_return = s.domain.rcen
+    #r_to_return = s.domain.rcen
 
     #s.domain = domain_old
 
@@ -65,6 +98,7 @@ def pga_massive(s, Nsamples=200000, f_res = 4, pol = "both", return_autocorr=Fal
         return (E, P, r_to_return, corr)
     else:
         return (E, P)
+
 
 
 
@@ -94,7 +128,9 @@ def physical_from_numerics(s, Nsamples=100000, pad_factor =10.0, pol="both"):
     return (phicen / length_calibration, omegap, Bxnew, Bynew)
 
 
-def pga_massless(s, Nsamples=200000, pad_factor = 10.0, pol="both"):
+def pga_massless(s, Nsamples=200000, f_res = 4, pol="both"):
+
+    pad_factor =  (Nsamples / f_res)
 
     phicen, omegap, Bx, By = physical_from_numerics(s, Nsamples = Nsamples, pad_factor = pad_factor, pol = pol)
 

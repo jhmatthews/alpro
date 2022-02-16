@@ -105,14 +105,14 @@ def get_energy_samples(x, mass=None, omegap=None, mode="massive", coord_units="k
 	if mode == "massive":
 		if mass is None:
 			raise ValueError("get_pgg_transforms: mass kwarg must be set in massive case!")
-
-		E = mass * mass / 2.0 / kfreq
+		with np.errstate(divide='ignore'):
+			E = mass * mass / 2.0 / kfreq
 
 	elif mode == "massless":
 		if omegap is None:
 			raise ValueError("get_pgg_transforms: omegap kwarg must be set in massless case!")
-
-		E = 1.0 / kfreq
+		with np.errstate(divide='ignore'):
+			E = 1.0 / kfreq
 
 	else:
 		raise ValueError("Did not understand mode {}. Must be 'massive' or 'massless'".format(mode))
@@ -187,13 +187,14 @@ def get_pga_transforms(x, g, B, omegap=None, mass=None, mode="massive", transfor
 		if mass is None:
 			raise ValueError("get_pgg_transforms: mass kwarg must be set in massive case!")
 
-		E = mass * mass / 2.0 / kfreq
+		with np.errstate(divide='ignore'):
+			E = mass * mass / 2.0 / kfreq
 
 	elif mode == "massless":
 		if omegap is None:
 			raise ValueError("get_pgg_transforms: omegap kwarg must be set in massless case!")
-
-		E = 1.0 / kfreq
+		with np.errstate(divide='ignore'):
+			E = 1.0 / kfreq
 
 	else:
 		raise ValueError("Did not understand mode {}. Must be 'massive' or 'massless'".format(mode))
@@ -276,7 +277,8 @@ def get_pga_autocorr(x, g, B, omegap=None, mass=None, mode="massive", return_aut
 		# has an additional factor in that we don't want.
 		cos_transform = dx * dct(c_f, type=transform_type)
 
-		E = mass * mass / 2.0 / kfreq
+		with np.errstate(divide='ignore'):
+			E = mass * mass / 2.0 / kfreq
 		P = g * g / 2.0 * cos_transform
 		corr = c_f
 
@@ -296,7 +298,8 @@ def get_pga_autocorr(x, g, B, omegap=None, mass=None, mode="massive", return_aut
 		cos_transform = dx * dct(c_G, type=transform_type) 
 		probability = 2.0 * cos_transform 
 
-		E = 1.0 / kfreq
+		with np.errstate(divide='ignore'):
+			E = 1.0 / kfreq
 		P = probability 
 		corr = c_G
 
