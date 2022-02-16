@@ -2,7 +2,7 @@ The Fourier Formalism
 --------------------------------------
 
 The Fourier formalism is described by `Marsh et al 2022 <https://ui.adsabs.harvard.edu/abs/2021arXiv210708040M/abstract>`_. 
-Marsh et al. showed that, to leading order in :math:`g_{a\gamma}`, the conversion probability :math:`P_{\gamma_i\to a}` (with :math:`i\in [x,y]`) can be related to :math:`\Delta_i(z)`, or equivalently, the magnetic field profile along the line of sight $:math:`B_i(z)`, using Fourier-like transforms. Although this treatment breaks down when the conversion probabilities exceed 5-10 per cent, it is an extremely useful framework when considering how different magnetic field treatments affect the conversion probability. 
+Marsh et al. showed that, to leading order in :math:`g_{a\gamma}`, the conversion probability :math:`P_{\gamma_i\to a}` (with :math:`i\in [x,y]`) can be related to :math:`\Delta_i(z)`, or equivalently, the magnetic field profile along the line of sight :math:`B_i(z)`, using Fourier-like transforms. Although this treatment breaks down when the conversion probabilities exceed 5-10 per cent, it is an extremely useful framework when considering how different magnetic field treatments affect the conversion probability. 
 
 In the massive ALP (:math:`m_a \gg \omega_{\rm pl}`) case and focusing on the $x$-component only, the conversion probability can be written as 
 

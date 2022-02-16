@@ -46,7 +46,10 @@ extensions = [
     'sphinx_gallery.load_style',
 ]
 
-
+# -- Suppress warnings about autosectionlabel duplicates ------------------
+suppress_warnings = [
+    'autosectionlabel.*',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
