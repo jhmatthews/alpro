@@ -12,7 +12,7 @@
 #
 # import os
 import sys
-sys.path.insert(0, '../../alpro/')
+sys.path.insert(0, '../../')
 import alpro
 
 # -- Project information -----------------------------------------------------
