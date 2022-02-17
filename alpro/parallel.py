@@ -1,13 +1,16 @@
 #!/usr/bin/env python
-import numpy as np 
-import sys, os
+import numpy as np
+import sys
+import os
 from mpi4py import MPI
 import time
 import unittest
 import alpro
 
+
 def dummy(i):
     return i
+
 
 def get_nmin_nmax_mpi(my_rank, nproc, Nmodels, Nstart=0, mode="chunks"):
     '''
@@ -17,35 +20,43 @@ def get_nmin_nmax_mpi(my_rank, nproc, Nmodels, Nstart=0, mode="chunks"):
 
     Parameters:
         my_rank     int
-                    processor rank, number between 0 and nproc 
+                    processor rank, number between 0 and nproc
 
-        nproc       int 
+        nproc       int
                     number of parallel processors
 
-        Nmodels     int 
+        Nmodels     int
                     total number of models / calculations we want to do
 
-        Nstart      int 
-                    Starting point (in case you want to start higher than 0) 
+        Nstart      int
+                    Starting point (in case you want to start higher than 0)
 
         mode        str
                     how to split up the parallel processes.
     '''
 
-    # this MUST be an integer division so we get the remainder right 
-    n_models_per_thread = int(Nmodels // nproc)       # number of models for each thread
-    remainder = Nmodels - ( n_models_per_thread * nproc )   # the remainder, since your number of models may not be divisible 
+    # this MUST be an integer division so we get the remainder right
+    # number of models for each thread
+    n_models_per_thread = int(Nmodels // nproc)
+    # the remainder, since your number of models may not be divisible
+    remainder = Nmodels - (n_models_per_thread * nproc)
 
     if mode == "sequence":
-        my_tasks = np.arange(my_rank,(n_models_per_thread * nproc), nproc, dtype=int)
+        my_tasks = np.arange(
+            my_rank,
+            (n_models_per_thread * nproc),
+            nproc,
+            dtype=int)
         ndo = n_models_per_thread
         if remainder > my_rank:
-            my_tasks = np.append(my_tasks, (n_models_per_thread * nproc) + my_rank)
+            my_tasks = np.append(
+                my_tasks, (n_models_per_thread * nproc) + my_rank)
             ndo += 1
 
     elif mode == "chunks":
         # little trick to spread remainder out among threads. If say you had 19 total models, and 4 threads
-        # then n_models = 4, and you have 3 remainder. This little loop bit of code redistributes these 3
+        # then n_models = 4, and you have 3 remainder. This little loop bit of
+        # code redistributes these 3
         if remainder < my_rank + 1:
             my_extra = 0
             extra_below = remainder
@@ -60,7 +71,7 @@ def get_nmin_nmax_mpi(my_rank, nproc, Nmodels, Nstart=0, mode="chunks"):
         # total number you actually do
         ndo = my_nmax - my_nmin
 
-        # tasks to iterate over 
+        # tasks to iterate over
         my_tasks = np.arange(my_nmin, my_nmax, 1, dtype=int)
 
     else:
@@ -77,54 +88,60 @@ def run(function, iterable, kwargs={}, split="chunks"):
 
     Parameters:
         function    callable
-                    function to compute 
+                    function to compute
 
         iterable    iterable
-                    iterable containing first arguments 
+                    iterable containing first arguments
 
         kwargs      dictionary
-                    dictionary of keyword arguments to pass to function 
+                    dictionary of keyword arguments to pass to function
 
-        split       str 
+        split       str
                     how to split up the parallel processes
 
     Returns:
-        time_tot    float 
-                    time taken to compute 
+        time_tot    float
+                    time taken to compute
 
     '''
 
-    # let's get some of the information about processors running in parallel 
+    # let's get some of the information about processors running in parallel
     nproc = MPI.COMM_WORLD.Get_size()       # number of processes
     my_rank = MPI.COMM_WORLD.Get_rank()     # The number/rank of this process
     Nmodels = len(iterable)
 
     # where to start and end your loops for each thread
-    my_tasks, ndo = get_nmin_nmax_mpi(my_rank, nproc, Nmodels, Nstart=0, mode=split)
+    my_tasks, ndo = get_nmin_nmax_mpi(
+        my_rank, nproc, Nmodels, Nstart=0, mode=split)
 
-
-    print ("This is thread {} calculating models {} to {}, total {}".format(my_rank, my_tasks[0], my_tasks[-1], ndo))
-    
+    print("This is thread {} calculating models {} to {}, total {}".format(
+        my_rank, my_tasks[0], my_tasks[-1], ndo))
 
     # set barrier so print output doesn't look muddled
     # just waits for other thread
     MPI.COMM_WORLD.Barrier()
-    t1 = time.time() # set a timer
+    t1 = time.time()  # set a timer
 
     for i in my_tasks:
-        # call the function with the iterable as the argument 
+        # call the function with the iterable as the argument
         function(iterable[i], **kwargs)
-        
+
     time_tot = time.time() - t1
-    
+
     # set barrier so print output doesn't look muddled
-    if my_rank == 0: print ('Waiting for other threads to finish...')
+    if my_rank == 0:
+        print('Waiting for other threads to finish...')
 
     # another barrier, wait for all to finish
     MPI.COMM_WORLD.Barrier()
 
-    print ("Thread {} took {} seconds to calculate {} models".format(my_rank, time_tot, ndo))
+    print(
+        "Thread {} took {} seconds to calculate {} models".format(
+            my_rank,
+            time_tot,
+            ndo))
     return (time_tot)
+
 
 class RunTest(unittest.TestCase):
     def test_parallel(self):
@@ -135,11 +152,11 @@ class RunTest(unittest.TestCase):
             s1.set_params(1e-14 * 1e-9, 1e-13)
             s1.domain.create_box_array(1800.0, i, s1.coherence_func, r0=0)
 
-        n = np.arange(0,100)
+        n = np.arange(0, 100)
         run(function_for_para, n)
 
-if __name__ == "__main__":
-    print ("Testing ALPRO parallelisation routine")
-    print ("Location: {}".format(alpro.__file__))
-    unittest.main()
 
+if __name__ == "__main__":
+    print("Testing ALPRO parallelisation routine")
+    print("Location: {}".format(alpro.__file__))
+    unittest.main()

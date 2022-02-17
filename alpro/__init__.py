@@ -3,14 +3,14 @@ from .alpro_numba import *
 from .main import *
 import alpro.util as util
 import alpro.test as test
-import alpro.pure as pure 
+import alpro.pure as pure
 import alpro.fourier as fourier
 import alpro.fourier_core as fourier_core
 import importlib
 mpi_loader = importlib.find_loader('mpi4py')
 found_mpi = mpi_loader is not None
 if found_mpi:
-    import alpro.parallel as parallel 
+    import alpro.parallel as parallel
 
 __author__ = "James Matthews"
 __email__ = "matthews@ast.cam.ac.uk"
