@@ -79,4 +79,3 @@ Pillow>=8.3.2
 pyparsing>=2.4.7
 python-dateutil>=2.8.2
 scipy>=1.7.1
-mpi4py>=3.1.3

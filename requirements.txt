@@ -9,4 +9,3 @@ pyparsing>=2.4.7
 python-dateutil>=2.8.2
 scipy>=1.7.1
 six>=1.16.0
-mpi4py>=3.1.3

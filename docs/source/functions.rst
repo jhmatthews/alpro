@@ -29,8 +29,3 @@ Utilities
 .. automodule:: alpro.util
     :members:
 
-Parallelisation
-================
-
-.. automodule:: alpro.parallel
-    :members:
