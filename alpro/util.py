@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 from alpro.models import unit
 
 class my_powerlaw:
-	'''
+	r'''
 	container for generating random numbers from a powerlaw with slope < 1. 
 	For a power of form x**-n, with b>1, from xmin to xmax, the resulting
 	CDF can be shown to take the analytic form
 
-		CDF(x) = (xmin^alpha - x^alpha) / (xmin^alpha - xmax^alpha)
+		:math:`CDF(x) = (x_{\rm min}^\alpha - x^\alpha) / (x_{\rm min}^\alpha - x_{\rm max}^\alpha)`
 
-	where alpha = 1-n. Thus, if z is a random number in range (0,1),
+	where :math:`\alpha = 1-n`. Thus, if z is a random number in range (0,1),
 	then a random variable rv can be found by inverting this expression,
 	i.e. rv = [z * (b^alpha - a^alpha) + a^alpha] ^ (1/alpha).
 
@@ -42,50 +42,10 @@ class my_powerlaw:
 		rv = (term1 + term2) ** (1.0 / self.alpha)
 		return (rv)
 
-class modelb_powerlaw:
-	'''
-	container for generating random numbers from a powerlaw with slope < 1. 
-	For a power of form x**-n, with b>1, from xmin to xmax, the resulting
-	CDF can be shown to take the analytic form
-
-		:math:`CDF(x) = (xmin^alpha - x^alpha) / (xmin^alpha - xmax^alpha)`
-
-	where alpha = 1-n. Thus, if z is a random number in range (0,1),
-	then a random variable rv can be found by inverting this expression,
-	i.e. rv = [z * (b^alpha - a^alpha) + a^alpha] ^ (1/alpha).
-
-	This is embedded in a class so an individual function can be passed without
-	additional arguments, the function rvs() generates the actual random numbers
-	similarly to scipy.stats distribution syntax.
-	'''
-	def __init__(self, n=1.2, xmin=3.5, xmax=10.0):
-		'''
-		initialise the powerlaw parameters
-		'''
-		self.n = n
-		self.alpha = 1.0 - self.n
-		self.xmin = xmin 
-		self.xmax = xmax 
-
-	def rvs(self, r, size=None):
-		'''
-		generate (size) random variables. if size is None, 
-		generate a single float.
-		'''
-		if size == None:
-			z = np.random.random()
-		else:
-			z = np.random.random(size=size)
-
-		term1 = z * (self.xmax ** self.alpha)
-		term2 = (1. - z) * (self.xmin ** self.alpha)
-		rv = (term1 + term2) ** (1.0 / self.alpha)
-		return (rv)
-
 def delta_eff(energy, ne, mass):
 	r'''
-	Calculate delta_eff for a B field in Gauss, a mass in eV and a photon energy in eV
-	:math:`\Delta_{\rm eff} = \frac{m_A^2 - \omega_p^2}{4 \omega}`
+	Calculate delta_eff for an electron density in CGS, a mass in eV and a photon energy in eV
+	:math:`\Delta_{\rm eff} = (m_A^2 - \omega_p^2)/(4 \omega)`
 	'''
 	omega_p = np.sqrt (4.0 * np.pi * unit.e * unit.e * ne / unit.melec) * unit.hbar_ev;
 	delta = ((mass * mass) - (omega_p * omega_p)) / 4.0 / energy

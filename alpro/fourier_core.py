@@ -28,6 +28,7 @@ def get_transforms(x, g, B, omegap=None, mass=None, mode="massive", transform_ty
 	'''
 	calculate the cosine and sine transforms of B
 
+	Parameters:
 		x 				array-like
 						the coordinate for the calculation - either physical space
 						or phi
@@ -43,6 +44,15 @@ def get_transforms(x, g, B, omegap=None, mass=None, mode="massive", transform_ty
 
 		mode 			str
 						massive or massless
+
+	Returns:
+		kfreq 			array-like
+						Fourier samples of eta or lambda 
+						(conjugate variable depends on regime)
+		dsx				array-like
+						the discrete sine transform 
+		dcx				array-like
+						the discrete cosine transform 
 
 	'''
 	N = len(x) + 1

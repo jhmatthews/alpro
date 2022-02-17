@@ -9,7 +9,8 @@ class Survival:
 	'''
 	High-level class which interfaces with actual ALP
 	calculation as well as cluster models to compute 
-	survival probability curves. 
+	survival probability curves. This is the starting
+	point for any calculation.
 	'''
 	def __init__(self, ModelType = None, implementation="numba", pol_matrix=False, xmin=3.5, xmax=10.0):
 		self.model = ModelType
@@ -74,7 +75,7 @@ class Survival:
 
 	def init_model(self, lcorr=None):
 		'''
-		initialise the ALP model.  
+		Initialise the ALP model. Sets up an appropriate domain.
 		'''
 		if self.coherence_func == None:
 			self.coherence_func = lcorr
@@ -85,6 +86,9 @@ class Survival:
 			self.domain = models.FieldModel(profile=self.cluster.profile, coherence_r0=self.coherence_r0)
 
 	def setup_regular_model(self, B = None, L = None, ne = None, N = 1, phi = 0.0):
+		'''
+		set up a regular field model
+		'''
 		self.init_model()
 
 		if self.model == "libanov":
@@ -97,7 +101,6 @@ class Survival:
 
 
 	# def setup_cell_model(self):
-
 	def get_curve(self, energies, random_seed, L, r0=10.0, radial_profile = False, rm_reject = np.inf, cell_centered=True):
 		
 		if self.model == "libanov":
@@ -122,9 +125,8 @@ class Survival:
 		'''
 		Set the ALP coupling constant and mass
 
-		Parameters
-		-----------
-			g_a 		float 
+		Parameters:
+			g 			float 
 						ALP coupling constant in units set by invgev boolean
 			mass 		float 
 						ALP mass in eV
