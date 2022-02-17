@@ -21,4 +21,4 @@ The notebooks below allow one to reproduce certain figures from the papers using
 .. examples/SiskReynes2021
 .. examples/Marsh2022
 
-The data used in the limits plots can be downloaded here in astropy ascii table format: :download:`NGC1275_limits.dat <examples/NGC1275_limits.dat>`.
+The data used in the limits plots can be downloaded here in astropy ascii table format: :download:`NGC1275_limits.dat <data/NGC1275_limits.dat>`.
