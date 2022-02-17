@@ -65,6 +65,9 @@ class Survival:
         self.pol_matrix_bool = pol_matrix
 
     def set_coherence_pl(self, n=1.2, xmin=3.5, xmax=10.0, r0=None):
+        '''
+        setup a powerlaw distribution of coherence lengths / box sizes
+        '''
         pl = util.my_powerlaw(n=n, xmin=xmin, xmax=xmax)
         self.coherence_func = pl.rvs
         self.set_coherence_r0(r0)
@@ -280,7 +283,25 @@ class Survival:
     def default_plot(self, plot_kwargs={}, mode="conversion",
                      theory=None, theory_kwargs={}):
         '''
-        Mke a basic plot of the survival probability
+        Make a basic plot of the survival probability against energy
+        using most recent calculation stored in Survival class.
+
+        Parameters:
+                plot_kwargs 	dict
+                                                dictionary of kwargs to pass to plt.plot
+
+                mode 			str
+                                                where to plot "conversion" or "survival" probability
+
+                theory 			function
+                                                function to overlay on plot, e.g. s.analytic_pga
+
+                theory_kwargs 	dict
+                                                dictionary of kwargs to pass to plt.plot for theory overlay
+
+        Returns:
+                fig 			matplotlib.pyplot.figure
+                                                figure instance
         '''
         fig = plt.figure()
         if mode == "conversion":
@@ -304,6 +325,10 @@ class Survival:
         return (fig)
 
     def analytic_pga(self, energies):
+        '''
+        wrapper to util.P_gamma_analytic that passes the arguments stored
+        in the Survival class
+        '''
         P = util.P_gamma_analytic(
             energies,
             self.domain.B,

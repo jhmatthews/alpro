@@ -200,7 +200,7 @@ def get_pga_transforms(x, g, B, omegap=None, mass=None, mode="massive",
     dx = dx_all[0]
 
     # check evenly spaced array within tolerance
-    assert (np.all(np.fabs(dx_all - dx) / dx < 1e-10))
+    assert (np.all(np.fabs(dx_all - dx) / dx < 1e-10)), "Array of Fourier samples is not evenly spaced!"
 
     # call function that calculates sine and cosine transforms
     # exact calculation depends on the mode
@@ -291,7 +291,7 @@ def get_pga_autocorr(x, g, B, omegap=None, mass=None, mode="massive",
     kfreq = np.pi * np.arange(0, N - 1, 1) / (dx * N)
 
     # check evenly spaced array within tolerance
-    assert (np.all(np.fabs(dx_all - dx) / dx < 1e-10))
+    assert (np.all(np.fabs(dx_all - dx) / dx < 1e-10)), "Array of Fourier samples is not evenly spaced!"
 
     if mode == "massive":
         if mass is None:

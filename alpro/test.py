@@ -166,25 +166,29 @@ class RunTest(unittest.TestCase):
         # set up cell model with uniform cell sizes
         s1 = alpro.Survival("1275b")
         s1.init_model()
-        s1.set_params(1e-14 * 1e-9, 1e-13)
+        s1.set_params(1e-12 * 1e-9, 1e-13)
         s1.set_coherence_r0(None)
-        s1.domain.create_box_array(100.0, 0, 10.0, r0=0)
+        s1.domain.create_box_array(500.0, 0, 10.0, r0=0)
 
         s2 = alpro.Survival("1275b")
         s2.init_model()
-        s2.set_params(1e-14 * 1e-9, 1e-13)
+        s2.set_params(1e-12 * 1e-9, 1e-13)
         s2.set_coherence_r0(None)
-        s2.domain.create_box_array(100.0, 0, 10.0, r0=0)
+        s2.domain.create_box_array(500.0, 0, 10.0, r0=0)
 
+        N = 100000
+        f_res = N // 40
         E, P2 = s2.propagate_fourier(
-            s2.domain, pol="both", mode="massless", N=10000, f_res=200)
-        P1, _ = s1.propagate(s1.domain, E, pol="both")
+            s2.domain, pol="both", mode="massless", N=N, f_res=f_res)
 
-        # self.assertTrue (np.allclose(P1, P2, rtol=0.1))
+        select = (E > 1e2) * (E < 1e4)
+        P1, _ = s1.propagate(s1.domain, E[select], pol="both")
+
+        #self.assertTrue (np.allclose(P1, P2[select], rtol=0.1))
         self.make_plot(
-            E,
+            E[select],
             P1,
-            P2,
+            P2[select],
             subplot=subplot,
             title="Fourier Massless",
             logy=True)

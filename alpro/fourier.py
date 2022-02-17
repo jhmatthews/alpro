@@ -9,15 +9,13 @@ def get_phi_numerical(s):
     Calculate phi numerically from an alpro.Survival class instance
     using Simpsons integration. Used in the massless ALP Fourier formalism
 
-    Parameters
-    -------------
-    s       alpro.Survival
-            survival class instance to use for calculation
+    Parameters:
+        s       alpro.Survival
+                survival class instance to use for calculation
 
-    Returns
-    -------------
-    phi     array-like
-            phi coordinate
+    Returns:
+        phi     array-like
+                phi coordinate
     '''
     omegap_sq = s.domain.omega_p ** 2
     r_natural = s.domain.rcen * unit.unit_length_natural * unit.kpc
@@ -28,6 +26,36 @@ def get_phi_numerical(s):
 
 def pga_massive(s, Nsamples=200000, f_res=4,
                 pol="both", return_autocorr=False):
+    '''
+    calculate the conversion probability
+
+    Parameters:
+        s           alpro.Survival
+                    survival class instance to use for calculation
+
+        Nsamples    int
+                    number of Fourier samples
+
+        f_res       int
+                    resolution factor
+
+        pol         string
+
+    Returns:
+        E           array-like
+                    energies as obtained from Fourier samples
+
+        P           array-like
+                    conversion probability
+
+        r_to_return array-like
+                    resampled points at which autocorrelation function is evaluated
+                    (only returned if return_autocorr==True)
+
+        corr        array-like
+                    autocorrelation function of magnetic field
+                    (only returned if return_autocorr==True)
+    '''
 
     zmax = np.max(s.domain.r) + s.domain.deltaL[-1]
     pad_factor = (Nsamples / f_res)
@@ -82,6 +110,33 @@ def pga_massive(s, Nsamples=200000, f_res=4,
 
 
 def physical_from_numerics(s, Nsamples=100000, pad_factor=10.0, pol="both"):
+    '''
+    Calculate a new grid for phi, numerically, and inerpolate the plasma frequency
+    and magnetic field components on to this grid
+
+    calculate the conversion probability using the massless Fourier formalism
+
+    Parameters:
+        s           alpro.Survival
+                    survival class instance to use for calculation
+
+        Nsamples    int
+                    number of Fourier samples
+
+        pad_factor  int
+                    factor by which to pad out solution with zeros
+
+        pol         string
+                    which polarization state to consider.
+                    must be 'x', 'y' or 'both'
+
+    Returns:
+        E           array-like
+                    energies as obtained from Fourier samples
+
+        P           array-like
+                    conversion probability
+    '''
 
     phi = get_phi_numerical(s)
     start = 0
@@ -120,6 +175,30 @@ def physical_from_numerics(s, Nsamples=100000, pad_factor=10.0, pol="both"):
 
 
 def pga_massless(s, Nsamples=200000, f_res=4, pol="both"):
+    '''
+    calculate the conversion probability using the massless Fourier formalism
+
+    Parameters:
+        s           alpro.Survival
+                    survival class instance to use for calculation
+
+        Nsamples    int
+                    number of Fourier samples
+
+        f_res       int
+                    resolution factor
+
+        pol         string
+                    which polarization state to consider.
+                    must be 'x', 'y' or 'both'
+
+    Returns:
+        E           array-like
+                    energies as obtained from Fourier samples
+
+        P           array-like
+                    conversion probability
+    '''
 
     pad_factor = (Nsamples / f_res)
 
