@@ -44,6 +44,7 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',
     'sphinx.ext.autodoc',
     'sphinx_gallery.load_style',
+    'sphinx_panels'
 ]
 
 # -- Suppress warnings about autosectionlabel duplicates ------------------

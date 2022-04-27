@@ -14,6 +14,6 @@ Documentation is hosted on [ReadTheDocs](https://alpro.readthedocs.io/en/latest/
 
 ### Citation and Contact
 
-The code is described in a paper, currently in preparation. More details can be found on 
+The code is described in a paper, currently in preparation. More details can be found under [Acknowledging ALPro](https://alpro.readthedocs.io/en/latest/acknowledge.html)
 
-If you are interested in using the code, please contact me on matthews [at] ast.cam.ac.uk or fork the project. 
+If you are interested in using the code, please contact me on matthews [at] ast.cam.ac.uk or fork the project. If you find problems, please [submit a GitHub Issue](https://github.com/jhmatthews/alpro/issues/new)

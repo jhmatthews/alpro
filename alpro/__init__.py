@@ -1,4 +1,3 @@
-# import alprocore as core
 from .alpro_numba import *
 from .main import *
 import alpro.util as util
@@ -34,14 +33,15 @@ archivePrefix = {arXiv},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }"""
 
-# Zenodo DOI citation - note that this cites "all versions"
-__zenodo__ = """@software{alpro,
-  author       = {James Matthews},
-  title        = {{{{alpro: Axion-Like PROpagation}}}},
-  month        = feb,
-  year         = 2022,
-  publisher    = {Zenodo},
-  version      = {v1.1},
-  doi          = {10.5281/zenodo.6137185},
-  url          = {https://doi.org/10.5281/zenodo.6137185}
-}"""
+# Zenodo DOI citation - note that this cites "all versions" 
+__zenodo__ = """@software{{alpro,
+author       = {{James Matthews}},
+title        = {{{{alpro: Axion-Like PROpagation}}}},
+month        = feb,
+year         = 2022,
+doi          = {{10.5281/zenodo.6137185}},
+version      = {{ {} }},
+publisher    = {{Zenodo}},
+url          = {{https://doi.org/10.5281/zenodo.6137185}}
+}}""".format(__version__)
+
