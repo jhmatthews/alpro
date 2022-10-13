@@ -200,7 +200,10 @@ def get_T_matrices(alpha):
 @jit(nopython=True)
 def get_deltas(mass, energy, M, B, omega_pl):
     Deltas = np.zeros((4, len(energy)))
-    Deltas[0] = -(omega_pl * omega_pl) / 2.0 / energy
+
+    # account for QED vacuum polarization and CMB photon dispersion
+    w2_term = ((1.42e-4 * (B/4.41e13)**2) + (0.522e-42)) * energy 
+    Deltas[0] = (-(omega_pl * omega_pl) / 2.0 / energy) + w2_term
     Deltas[1] = -(mass * mass) / 2.0 / energy
     Deltas[2] = B / 2.0 / M
 
