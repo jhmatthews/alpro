@@ -10,7 +10,7 @@ E = 4.8032045057134676e-10
 
 
 @jit(nopython=True)
-def get_P_matrix(energies, initial_state, phi, B, L, g_a, mass, ne):
+def get_P_matrix(energies, initial_state, phi, B, L, g_a, mass, ne, cmb_qed_term=True):
 
     # convert things to natural units
     M = 1.0 / g_a
@@ -21,7 +21,7 @@ def get_P_matrix(energies, initial_state, phi, B, L, g_a, mass, ne):
     # array for storing probabilities
     Pnew = np.zeros_like(energies)
 
-    Deltas = get_deltas(mass, energies, M, B, omega_pl)
+    Deltas = get_deltas(mass, energies, M, B, omega_pl, cmb_qed_term=cmb_qed_term)
     EVarray = get_eigenvalues(Deltas)
     alpha = 0.5 * np.arctan2(2.0 * Deltas[2], (Deltas[0] - Deltas[1]))
 
@@ -46,7 +46,7 @@ def get_P_matrix(energies, initial_state, phi, B, L, g_a, mass, ne):
 
 
 @jit(nopython=True)
-def get_P(energies, initial_state, phi, B, L, g_a, mass, ne):
+def get_P(energies, initial_state, phi, B, L, g_a, mass, ne, cmb_qed_term=True):
 
     # convert things to natural units
     M = 1.0 / g_a
@@ -57,7 +57,7 @@ def get_P(energies, initial_state, phi, B, L, g_a, mass, ne):
     # array for storing probabilities
     Pnew = np.zeros_like(energies)
 
-    Deltas = get_deltas(mass, energies, M, B, omega_pl)
+    Deltas = get_deltas(mass, energies, M, B, omega_pl, cmb_qed_term=cmb_qed_term)
     EVarray = get_eigenvalues(Deltas)
     alpha = 0.5 * np.arctan2(2.0 * Deltas[2], (Deltas[0] - Deltas[1]))
 
@@ -198,12 +198,17 @@ def get_T_matrices(alpha):
 
 
 @jit(nopython=True)
-def get_deltas(mass, energy, M, B, omega_pl):
+def get_deltas(mass, energy, M, B, omega_pl, cmb_qed_term=True):
     Deltas = np.zeros((4, len(energy)))
 
     # account for QED vacuum polarization and CMB photon dispersion
-    w2_term = ((1.42e-4 * (B/4.41e13)**2) + (0.522e-42)) * energy 
-    Deltas[0] = (-(omega_pl * omega_pl) / 2.0 / energy) + w2_term
+    Deltas[0] = (-(omega_pl * omega_pl) / 2.0 / energy) 
+
+    if cmb_qed_term:
+        Bcrit = 4.414e13 * UNIT_GAUSS
+        w2_term = ((1.42e-4 * (B/Bcrit)**2) + (0.522e-42)) * energy 
+        Deltas[0] += w2_term
+
     Deltas[1] = -(mass * mass) / 2.0 / energy
     Deltas[2] = B / 2.0 / M
 

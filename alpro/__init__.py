@@ -6,7 +6,7 @@ import alpro.pure as pure
 import alpro.fourier as fourier
 import alpro.fourier_core as fourier_core
 import importlib
-mpi_loader = importlib.find_loader('mpi4py')
+mpi_loader = importlib.util.find_spec('mpi4py')
 found_mpi = mpi_loader is not None
 if found_mpi:
     import alpro.parallel as parallel
