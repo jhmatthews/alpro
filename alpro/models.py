@@ -1,7 +1,5 @@
 import numpy as np
 from scipy.interpolate import interp1d
-import types
-import os
 from scipy.integrate import simpson
 
 
@@ -398,7 +396,7 @@ class FieldModel:
             self.ne = churazov_density(self.rcen)
         else:
             raise ValueError("density keyword must be Nonetype or churazov")
-        #self.rm = self.get_rm()
+        # self.rm = self.get_rm()
         self.omega_p = omega_p(self.ne)
 
     def uniform_field_z(self, deltaL=1.0, Lmax=1800.0):
@@ -456,13 +454,13 @@ class FieldModel:
         Returns:
                 the rotation measure of the field model in rad m^-2
         '''
-        #prefactor = (unit.e ** 3) / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
+        # prefactor = (unit.e ** 3) / 2.0 / np.pi / unit.melec_csq / unit.melec_csq
         prefactor = 812.0
         if cell_centered:
             r = self.rcen
         else:
             r = self.r
-        integral = simpson(self.ne * self.Bz * 1e6, r)
+        integral = simpson(self.ne * self.Bz * 1e6, x=r)
 
         return (prefactor * integral)
 
@@ -540,13 +538,13 @@ class FieldModel:
         # set random number seed
         np.random.seed(random_seed)
 
-        # initialise arrays and counters
+        #  initialise arrays and counters
         r = r0
         rcen = r0
         rcen_array, r_array = [], []
         deltaL_array = []
 
-        # wonder if there's a better way to do this?
+        #  wonder if there's a better way to do this?
         while r < L:
             # get a coherence length which will be the size of the box
             # this can be a function or a float
@@ -563,9 +561,9 @@ class FieldModel:
                 lc = (L - r) + 1e-10
 
             # if rcen == r0:
-            #	rcen += lc / 2.0
+            # rcen += lc / 2.0
             # else:
-            #	rcen += lc
+            # rcen += lc
 
             # rcen_array.append(rcen)
             r_array.append(r)
@@ -579,13 +577,13 @@ class FieldModel:
         # box
         Ncells = len(r_array)
         self.r = np.array(r_array)
-        #rcen_array = np.array(0.5 * (self.r[1:] + self.r[:-1]))
+        # rcen_array = np.array(0.5 * (self.r[1:] + self.r[:-1]))
         self.rcen = np.array(rcen_array)
         self.deltaL = np.array(deltaL_array)
 
-        # draw random isotropic angles and save phi
+        #  draw random isotropic angles and save phi
         theta, phi = random_angle(size=Ncells)
-        #phi = phi
+        # phi = phi
 
         # get density and magnetic field strength at centre of box
         if cell_centered:
@@ -595,23 +593,23 @@ class FieldModel:
         self.ne, Btot = self.profile(rprofile)
         self.cell_centered = cell_centered
 
-        # get the x and y components and increment r
-        #Bx_array.append(B * np.sin(theta2))
-        #y_array.append(B * np.cos(theta2))
+        #  get the x and y components and increment r
+        # Bx_array.append(B * np.sin(theta2))
+        # y_array.append(B * np.cos(theta2))
         self.Bx, self.By, self.Bz = self.get_B_comp_from_angles(
             Btot, theta, phi)
-        #self.Bx = Btot * np.sin(theta) * np.cos(phi)
-        #self.By = Btot * np.sin(theta) * np.sin(phi)
+        # self.Bx = Btot * np.sin(theta) * np.cos(phi)
+        # self.By = Btot * np.sin(theta) * np.sin(phi)
         self.theta = theta
 
-        # note B is actually Bperp
+        #  note B is actually Bperp
         self.B = np.sqrt(self.Bx**2 + self.By ** 2)
         self.phi = np.arctan2(self.Bx, self.By)
-        #self.phi = phi
+        # self.phi = phi
 
         self.rm = self.get_rm()
         self.omega_p = omega_p(self.ne)
-        #print (self.rm)
+        # print (self.rm)
 
     def get_B_comp_from_angles(self, Btot, theta, phi):
         Bx = Btot * np.sin(theta) * np.cos(phi)
@@ -639,7 +637,7 @@ class FieldModel:
 
         if len(index) > required_res:
             # multiple domains are close to resonance. This means
-            # we must be resolving the resonance relatively well,
+            #  we must be resolving the resonance relatively well,
             # so we just discard the the two points that span the actual resonance
             # Just discard the closest two
             closest1 = np.where(delta > 0, delta, np.inf).argmin()
@@ -668,7 +666,7 @@ class FieldModel:
                 arr_new = np.concatenate(to_concat)
                 setattr(domain_to_return, a, arr_new)
 
-            #self.rm = self.get_rm()
+            # self.rm = self.get_rm()
 
         # there are only a few domains close to resonance point, so we need to
         # resample
@@ -678,13 +676,13 @@ class FieldModel:
             closest1 = np.where(delta > 0, delta, np.inf).argmin()
             closest2 = np.where(-delta > 0, -delta, np.inf).argmin()
             ind = np.min((closest1, closest2))
-            #print (closest1, closest2)
+            # print (closest1, closest2)
 
             # new r array
             r_insert = np.linspace(self.r[ind], self.r[ind + 1], refine + 1)
             rcen_insert = 0.5 * (r_insert[1:] + r_insert[:-1])
 
-            # new r and rcen arrays
+            #  new r and rcen arrays
             r = np.concatenate((self.r[:ind], r_insert[:-1], self.r[ind + 1:]))
             rcen = np.concatenate(
                 (self.rcen[:ind], rcen_insert, self.rcen[ind + 1:]))
@@ -726,17 +724,17 @@ class FieldModel:
 
             # things that remain constant across resampling
             attrs_const = ["Bx", "By", "Bz", "B", "phi"]
-            #list_const = [domain_to_return.Bx, self.By, self.B, self.phi, self.Bz]
+            # list_const = [domain_to_return.Bx, self.By, self.B, self.phi, self.Bz]
             for a in attrs_const:
                 arr = getattr(domain_to_return, a)
                 arr_insert = np.ones(len(rcen_insert) - 1) * arr[ind]
                 to_concat = (arr[:ind], arr_insert, arr[ind + ndiscard:])
                 arr = np.concatenate(to_concat)
                 setattr(domain_to_return, a, arr)
-                assert (len(getattr(domain_to_return, a)) == N,
-                        "incorrect array lengths after pruning -- could mean domain was modified pre-pruning")
+                assert len(getattr(domain_to_return, a)
+                           ) == N, "incorrect array lengths after pruning -- could mean domain was modified pre-pruning"
 
-        #domain_to_return = DomainTemp(deltaL, B, phi, ne, len(index))
+        # domain_to_return = DomainTemp(deltaL, B, phi, ne, len(index))
 
         return (domain_to_return)
 
@@ -771,12 +769,12 @@ class FieldModel:
 
 
 # this class copies over a different class to a new one without
-# trying to write non-writable attributes and without altering the original
+#  trying to write non-writable attributes and without altering the original
 # class
 class CopyDomain:
     def __init__(self, input_domain):
         attrs_to_copy = [f for f in dir(input_domain) if "__" not in f]
         for a in attrs_to_copy:
-            #print (a)
+            # print (a)
             value = getattr(input_domain, a)
             setattr(self, a, value)
