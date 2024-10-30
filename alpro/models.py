@@ -2,7 +2,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 import types
 import os
-from scipy.integrate import simps
+from scipy.integrate import simpson
 
 
 class units:
