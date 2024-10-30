@@ -462,7 +462,7 @@ class FieldModel:
             r = self.rcen
         else:
             r = self.r
-        integral = simps(self.ne * self.Bz * 1e6, r)
+        integral = simpson(self.ne * self.Bz * 1e6, r)
 
         return (prefactor * integral)
 
