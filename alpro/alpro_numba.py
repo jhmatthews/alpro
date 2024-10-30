@@ -134,6 +134,7 @@ def PropagateOnePolMatrix(alpha, EVarray, phi, pol, distance, energy):
 
 @jit(nopython=True)
 def PropagateOne(alpha, EVarray, phi, A, distance, energy):
+
     # get deltas and eigenvalues
     #Deltas = get_deltas (mass, energy, M, B, omega_pl)
     #EVarray = get_eigenvalues (Deltas)
@@ -161,6 +162,21 @@ def PropagateOne(alpha, EVarray, phi, A, distance, energy):
 
 @jit(nopython=True)
 def apply_rotation_matrix(phi, U0):
+    """
+    Applies a 3x3 rotation matrix to the input matrix `U0`.
+
+    Parameters:
+    -----------
+    phi : float
+        Rotation angle in radians.
+    U0 : np.ndarray
+        A 3x3 complex matrix to which the rotation will be applied.
+
+    Returns:
+    --------
+    np.ndarray
+        A 3x3 complex matrix resulting from the rotation of `U0`.
+    """
     nrows = 3
     v = np.zeros((nrows, nrows), dtype=np.complex128)
 
@@ -180,6 +196,20 @@ def apply_rotation_matrix(phi, U0):
 
 @jit(nopython=True)
 def get_T_matrices(alpha):
+    """
+    Generates three specific 3x3 transformation matrices based on an input angle `alpha`. 
+    These are the T matrices in de Angelis+ 2011. 
+
+    Parameters:
+    -----------
+    alpha : float
+        Angle in radians used to compute the transformation matrices.
+
+    Returns:
+    --------
+    tuple of np.ndarray
+        Three 3x3 complex transformation matrices (T1, T2, T3). 
+    """
     nrows = 3
     T1 = np.zeros((nrows, nrows), dtype=np.complex128)
     T2 = np.zeros((nrows, nrows), dtype=np.complex128)
@@ -199,6 +229,27 @@ def get_T_matrices(alpha):
 
 @jit(nopython=True)
 def get_deltas(mass, energy, M, B, omega_pl):
+    """
+    Computes the Delta terms for photon-ALP oscillation in the presence of a magnetic field and plasma.
+
+    Parameters:
+    -----------
+    mass : float
+        Particle mass.
+    energy : np.ndarray
+        Array of particle energy values.
+    M : float
+        Coupling constant.
+    B : float
+        Magnetic field strength.
+    omega_pl : float
+        Plasma frequency.
+
+    Returns:
+    --------
+    np.ndarray
+        A 4xN array of Delta terms for each energy value, where N is the length of `energy`.
+    """
     Deltas = np.zeros((4, len(energy)))
 
     # account for QED vacuum polarization and CMB photon dispersion
@@ -216,7 +267,19 @@ def get_deltas(mass, energy, M, B, omega_pl):
 
 @jit(nopython=True)
 def get_eigenvalues(Deltas):
-    # get eigenvalues of mixing matrix
+    """
+    Calculates eigenvalues of the mixing matrix using the provided Delta terms.
+
+    Parameters:
+    -----------
+    Deltas : np.ndarray
+        A 4xN array of Delta terms where N is the number of energy values.
+
+    Returns:
+    --------
+    np.ndarray
+        An Nx3 array of eigenvalues for each set of Delta terms, where N is the length of Deltas[0].
+    """
     EVarray = np.zeros((3, len(Deltas[0])))
     EVarray[0, :] = Deltas[0]
     EVarray[1, :] = 0.5 * (Deltas[0] + Deltas[1] - Deltas[3])
@@ -226,6 +289,23 @@ def get_eigenvalues(Deltas):
 
 @jit(nopython=True)
 def get_U0(EVarray, T1, T2, T3, distance):
+    """
+    Computes the mixing matrix U0 based on eigenvalues and transformation matrices.
+
+    Parameters:
+    -----------
+    EVarray : np.ndarray
+        Array of eigenvalues with shape (N, 3), where N is the number of energy values.
+    T1, T2, T2 : np.ndarray
+        The 3x3 complex transformation matrices.
+    distance : float
+        Distance over which oscillation effects are calculated.
+
+    Returns:
+    --------
+    np.ndarray
+        A 3x3 complex matrix `U0` resulting from the eigenvalue and transformation matrix combination.
+    """
     # get complex coefficients (e^i lambda_j d) */
     EVexp1 = 1.0 * np.exp(EVarray[0] * 1j * distance)
     EVexp2 = 1.0 * np.exp(EVarray[1] * 1j * distance)
