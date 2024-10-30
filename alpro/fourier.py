@@ -1,6 +1,6 @@
 from .fourier_core import *
 import alpro
-from scipy.integrate import simps
+from scipy.integrate import simpson
 from scipy.interpolate import interp1d
 
 
