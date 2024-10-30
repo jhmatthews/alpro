@@ -6,7 +6,7 @@ Babel==2.9.1
 backcall==0.2.0
 beautifulsoup4==4.10.0
 bleach==4.1.0
-certifi==2022.12.7
+certifi==2023.7.22
 charset-normalizer==2.0.10
 cycler>=0.10.0
 debugpy==1.5.1
@@ -43,7 +43,7 @@ pexpect==4.8.0
 pickleshare==0.7.5
 prompt-toolkit==3.0.24
 ptyprocess==0.7.0
-Pygments==2.11.2
+Pygments==2.15.0
 pyparsing==3.0.6
 pyrsistent==0.18.0
 python-dateutil==2.8.2
@@ -67,10 +67,10 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
 testpath==0.5.0
-tornado==6.1
+tornado==6.3.3
 traitlets==5.1.1
 typing-extensions==4.0.1
-urllib3==1.26.8
+urllib3==1.26.18
 wcwidth==0.2.5
 webencodings==0.5.1
 zipp==3.7.0
