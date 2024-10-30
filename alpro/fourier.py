@@ -19,7 +19,7 @@ def get_phi_numerical(s):
     '''
     omegap_sq = s.domain.omega_p ** 2
     r_natural = s.domain.rcen * unit.unit_length_natural * unit.kpc
-    phi = 0.5 * np.array([simps(omegap_sq[:i + 1], x=r_natural[:i + 1])
+    phi = 0.5 * np.array([simpson(omegap_sq[:i + 1], x=r_natural[:i + 1])
                          for i in range(0, len(r_natural) - 1)])
     return phi
 
