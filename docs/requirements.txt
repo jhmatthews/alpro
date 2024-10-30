@@ -6,7 +6,7 @@ Babel==2.9.1
 backcall==0.2.0
 beautifulsoup4==4.10.0
 bleach==4.1.0
-certifi==2022.12.7
+certifi==2023.7.22
 charset-normalizer==2.0.10
 cycler>=0.10.0
 debugpy==1.5.1
