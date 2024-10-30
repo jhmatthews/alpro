@@ -15,7 +15,7 @@ class Survival:
     '''
 
     def __init__(self, ModelType=None, implementation="numba",
-                 pol_matrix=False, xmin=3.5, xmax=10.0):
+                 pol_matrix=False, xmin=3.5, xmax=10.0, cmb_qed_term=True):
         self.model = ModelType
         self.coherence_func = None
 
@@ -63,6 +63,7 @@ class Survival:
             self.get_P = alpro.get_P
 
         self.pol_matrix_bool = pol_matrix
+        self.cmb_qed_term = cmb_qed_term
 
     def set_coherence_pl(self, n=1.2, xmin=3.5, xmax=10.0, r0=None):
         '''
@@ -257,12 +258,12 @@ class Survival:
 
             if ypol:
                 P_y, new_y = calculate_P(
-                    energies, init_y, phi, B, L, self.g_a, self.mass, ne)
+                    energies, init_y, phi, B, L, self.g_a, self.mass, ne, self.cmb_qed_term)
                 init_y = new_y
 
             if xpol:
                 P_x, new_x = calculate_P(
-                    energies, init_x, phi, B, L, self.g_a, self.mass, ne)
+                    energies, init_x, phi, B, L, self.g_a, self.mass, ne, self.cmb_qed_term)
                 init_x = new_x
 
             if xpol and ypol:
