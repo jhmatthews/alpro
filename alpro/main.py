@@ -401,7 +401,7 @@ class Survival:
                 print(
                     "Adopting massive ALP regime for calculation with inaccurate results")
                 print(
-                    "m_a: {:.2e} eV, plasma frequency range: {.2e} to {.2e} eV".format(
+                    "m_a: {:.2e} eV, plasma frequency range: {:.2e} to {:.2e} eV".format(
                         self.mass, np.min(
                             domain.omega_p), np.max(
                             domain.omega_p)))
