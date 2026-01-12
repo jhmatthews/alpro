@@ -61,7 +61,6 @@ def pga_massive(s, Nsamples=200000, f_res=4,
     pad_factor = (Nsamples / f_res)
 
     new_z = np.linspace(0, pad_factor * zmax, Nsamples)
-    new_z = np.linspace(0, (Nsamples / f_res) * zmax, Nsamples)
     zcen = 0.5 * (new_z[1:] + new_z[:-1])
     new_z_use = new_z[new_z <= zmax]
 
