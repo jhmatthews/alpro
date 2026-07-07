@@ -80,7 +80,7 @@ def get_P(energies, initial_state, phi, B, L, g_a, mass, ne, cmb_qed_term=True):
         A = Ainit[i]
         A2 = PropagateOne(alpha[i], EVarray[i], phi[i], A, distance, energy)
 
-        A_new[i, :] = A2
+        A_new[i, :] = A2 
         axion_amp = A2[2]
         Pnew[i] = np.abs(axion_amp) ** 2
 

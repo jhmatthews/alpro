@@ -5,6 +5,7 @@ import alpro.test as test
 import alpro.pure as pure
 import alpro.fourier as fourier
 import alpro.fourier_core as fourier_core
+import alpro.alpro_Nalp as Nalp
 import importlib
 
 # test for mpi4py before including the parallel section of alpro

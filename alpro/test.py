@@ -5,6 +5,8 @@ import unittest
 import os
 import matplotlib.pyplot as plt
 from datetime import date, datetime
+from hypothesis import given, settings, assume
+from hypothesis import strategies as st
 
 # this our energy array in units of eV
 energy_gamma = np.logspace(5, 7, 1000)
@@ -15,6 +17,18 @@ mass = 1e-11        # 1e-12 eV
 L = 10.0            # 10 kpc
 ne = 0.01            # 1 particle cm^-3 (sets plasma frequency)
 
+# these contain the valid ALP physical parameters for hypothesis tests
+alp_params = st.fixed_dictionaries({
+    "g": st.floats(min_value=1e-15, max_value=1e-11, allow_nan=False),
+    "mass": st.floats(min_value=1e-15, max_value=1e-8, allow_nan=False),
+})
+
+domain_params = st.fixed_dictionaries({
+    "B": st.floats(min_value=1e-7, max_value=1e-3, allow_nan=False),   # Gauss
+    "L": st.floats(min_value=1.0, max_value=1000.0, allow_nan=False),  # kpc
+    "ne": st.floats(min_value=0.0, max_value=0.1, allow_nan=False),    # cm^-3
+    "N": st.integers(min_value=1, max_value=50),
+})
 
 class RunTest(unittest.TestCase):
 
@@ -49,6 +63,24 @@ class RunTest(unittest.TestCase):
             subplot=subplot,
             logy=True,
             title="Analytic")
+        
+    def test_analytic_nalps(self):
+
+        # set up uniform modek
+        s = alpro.Survival("uniform")
+        s.setup_regular_model(B=B, L=L, ne=ne, N=1, phi=0.0)
+
+        # force multiple alps
+        s.set_params(g=g, mass=mass, force_nalps=True)   # set up ALP parameters in eV^-1 and eV
+        # propagate the photon-ALP beam
+        P, _ = s.propagate(energies=energy_x, pol="y")
+
+        # get theoretical prediction
+        prediction = s.analytic_pga(energy_x)
+
+        # compare results
+        self.assertTrue(np.allclose(P, prediction))
+
 
     def test_discretise(self, subplot=322):
 
@@ -192,6 +224,7 @@ class RunTest(unittest.TestCase):
             subplot=subplot,
             title="Fourier Massless",
             logy=True)
+        
 
     def title_string(self):
         t = """ALPro version {}
@@ -206,7 +239,22 @@ class RunTest(unittest.TestCase):
         plt.savefig("Test_{}.png".format(date.today().strftime("%d-%m-%Y")))
 
 
+    @given(alp_params, domain_params)
+    @settings(max_examples=200)
+    def test_probability_is_physical(self, alp, domain):
+        s = alpro.Survival("uniform")
+        s.set_params(g=alp["g"], mass=alp["mass"])
+        s.setup_regular_model(**domain, phi=0.0)
+
+        energies = np.logspace(3, 7, 50)
+        P, _ = s.propagate(energies=energies, pol="both")
+
+        assert np.all(np.isfinite(P))
+        assert np.all(P >= -1e-10)
+        assert np.all(P <= 1 + 1e-10)
+
+
+
+
 if __name__ == '__main__':
-    print("Testing ALPRO")
-    print("Location: {}".format(alpro.__file__))
     unittest.main()

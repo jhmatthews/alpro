@@ -1,6 +1,6 @@
 from distutils.core import setup, Extension
-import numpy
-import os
+# import numpy
+# import os
 
 # data files 
 data_files = ["data/*.dat"]

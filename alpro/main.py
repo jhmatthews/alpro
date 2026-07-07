@@ -18,6 +18,7 @@ class Survival:
                  pol_matrix=False, xmin=3.5, xmax=10.0, cmb_qed_term=True):
         self.model = ModelType
         self.coherence_func = None
+        self.N_alps = 1
 
         self.available_models = [
             "1821",
@@ -61,9 +62,11 @@ class Survival:
             self.get_P = alpro.pure.get_P
         elif implementation == "numba":
             self.get_P = alpro.get_P
+        self.implementation = implementation
 
         self.pol_matrix_bool = pol_matrix
         self.cmb_qed_term = cmb_qed_term
+
 
     def set_coherence_pl(self, n=1.2, xmin=3.5, xmax=10.0, r0=None):
         '''
@@ -146,9 +149,11 @@ class Survival:
         else:
             return (P)
 
-    def set_params(self, g=1e-13 * 1e-9, mass=1e-13, invgev=False):
+    def set_params(self, g=1e-13 * 1e-9, mass=1e-13, invgev=False, force_nalps=False):
         '''
-        Set the ALP coupling constant and mass
+        Set the ALP coupling constant(s) and mass(es) for the calculation. 
+        If multiple values are supplied, then the calculation will be done 
+        with Danny Kirkham's multi-ALP framework.
 
         Parameters:
                 g 			float
@@ -160,8 +165,27 @@ class Survival:
         '''
         if invgev:
             g = g * 1e-9
-        self.g_a = g
-        self.mass = mass
+
+        g_list = np.atleast_1d(g)
+        mass_list = np.atleast_1d(mass) 
+
+        if len(g_list) != len(mass_list):
+            raise ValueError("g and mass must have the same length")
+        else:
+            self.N_alps = len(g_list)
+        
+        if force_nalps or self.N_alps > 1:
+            self.g_a = np.array(g_list)
+            self.mass = np.array(mass_list)
+
+            if self.implementation == "numba":
+                self.get_P = alpro.Nalp.get_P_Nalp
+            else:
+                raise NotImplementedError("N_alps > 1 not yet implemented for pure python implementation")
+        else:
+            self.g_a = g
+            self.mass = mass
+        
 
     def propagate_with_pruning(self, domain, energies, pol="both", threshold=0.1,
                                refine=10, required_res=3, return_pruned_domain=False):
@@ -232,20 +256,25 @@ class Survival:
         if pol_matrix is None:
             pol_matrix = self.pol_matrix_bool
 
+        dim = self.N_alps + 2
+
         # set up the initial state vectors depending on the mode
         if pol_matrix:
+            if self.N_alps >= 1:
+                raise NotImplementedError("N_alps > 1 not yet implemented for pol_matrix=True")
             init_x, init_y, _ = pure_pol_vectors_like(energies)
             calculate_P = alpro.get_P_matrix
         else:
             if ypol:
-                init_y = np.zeros((len(energies), 3), dtype=np.complex128)
+                init_y = np.zeros((len(energies), dim), dtype=np.complex128)
                 init_y[:, 1] = 1.0
 
             if xpol:
-                init_x = np.zeros((len(energies), 3), dtype=np.complex128)
+                init_x = np.zeros((len(energies), dim), dtype=np.complex128)
                 init_x[:, 0] = 1.0
 
             calculate_P = self.get_P
+            
 
         self.P_radial = np.zeros((len(domain.deltaL), len(energies)))
 
