@@ -15,10 +15,11 @@ class Survival:
     '''
 
     def __init__(self, ModelType=None, implementation="numba",
-                 pol_matrix=False, xmin=3.5, xmax=10.0, cmb_qed_term=True):
+                 pol_matrix=False, xmin=3.5, xmax=10.0, cmb_qed_term=True, multi_alp=False):
         self.model = ModelType
         self.coherence_func = None
         self.N_alps = 1
+
 
         self.available_models = [
             "1821",
@@ -58,14 +59,31 @@ class Survival:
                 self.available_models)
 
         # allow implementation to be pure python
-        if implementation == "python":
-            self.get_P = alpro.pure.get_P
-        elif implementation == "numba":
-            self.get_P = alpro.get_P
         self.implementation = implementation
+        self.multi_alp = multi_alp
 
         self.pol_matrix_bool = pol_matrix
         self.cmb_qed_term = cmb_qed_term
+
+    @property
+    def multi_alp(self):
+        return self._multi_alp
+    
+    @multi_alp.setter
+    def multi_alp(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("multi_alp must be a boolean")
+
+        self._multi_alp = value 
+        if self._multi_alp:
+            if self.implementation != "numba":
+                raise NotImplementedError("multi_alp is only implemented for numba implementation")
+            self.get_P = alpro.Nalp.get_P_Nalp
+        else:
+            if self.implementation == "numba":
+                self.get_P = alpro.get_P
+            elif self.implementation == "python":
+                self.get_P = alpro.pure.get_P
 
 
     def set_coherence_pl(self, n=1.2, xmin=3.5, xmax=10.0, r0=None):
@@ -173,15 +191,15 @@ class Survival:
             raise ValueError("g and mass must have the same length")
         else:
             self.N_alps = len(g_list)
+
+        # the multi_alps boolean is to prevent any confusion about the multi-ALP framework, and 
+        # ensure if you are passing array-like objects to this function you mean to! 
+        if self.N_alps > 1 and self.multi_alp is False:
+            raise ValueError("N_alps > 1 but multi_alps is False. Set multi_alps=True to use multi-ALP framework.")
         
-        if force_nalps or self.N_alps > 1:
+        if self.multi_alp:
             self.g_a = np.array(g_list)
             self.mass = np.array(mass_list)
-
-            if self.implementation == "numba":
-                self.get_P = alpro.Nalp.get_P_Nalp
-            else:
-                raise NotImplementedError("N_alps > 1 not yet implemented for pure python implementation")
         else:
             self.g_a = g
             self.mass = mass
