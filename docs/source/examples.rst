@@ -10,3 +10,4 @@ To learn how to use Alpro, the easiest thing to do is use these notebooks and tu
    examples/libanov
    examples/Performance
    examples/fourier
+   examples/multiple
