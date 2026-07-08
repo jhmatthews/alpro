@@ -3,6 +3,7 @@ import numpy as np
 import alpro
 import unittest
 import os
+import sys
 import matplotlib.pyplot as plt
 from datetime import date, datetime
 from hypothesis import given, settings, assume
@@ -30,6 +31,11 @@ domain_params = st.fixed_dictionaries({
     "N": st.integers(min_value=1, max_value=50),
 })
 
+save_plot = True
+if "--no-plot" in sys.argv:
+    save_plot = False
+    sys.argv.remove("--no-plot")
+
 class RunTest(unittest.TestCase):
 
     def make_plot(self, energy, P1, P2, subplot=111, logy=False, title=None):
@@ -41,7 +47,7 @@ class RunTest(unittest.TestCase):
             ax.set_yscale("log")
         plt.title(title)
 
-    def test_analytic(self, subplot=321):
+    def test_analytic(self, subplot=421):
 
         # set up uniform modek
         s = alpro.Survival("uniform")
@@ -63,26 +69,9 @@ class RunTest(unittest.TestCase):
             subplot=subplot,
             logy=True,
             title="Analytic")
-        
-    def test_analytic_nalps(self):
-
-        # set up uniform modek
-        s = alpro.Survival("uniform")
-        s.setup_regular_model(B=B, L=L, ne=ne, N=1, phi=0.0)
-
-        # force multiple alps
-        s.set_params(g=g, mass=mass, force_nalps=True)   # set up ALP parameters in eV^-1 and eV
-        # propagate the photon-ALP beam
-        P, _ = s.propagate(energies=energy_x, pol="y")
-
-        # get theoretical prediction
-        prediction = s.analytic_pga(energy_x)
-
-        # compare results
-        self.assertTrue(np.allclose(P, prediction))
 
 
-    def test_discretise(self, subplot=322):
+    def test_discretise(self, subplot=422):
 
         # set up uniform modek
         s1 = alpro.Survival("uniform")
@@ -110,7 +99,7 @@ class RunTest(unittest.TestCase):
             logy=True,
             title="Discretisation")
 
-    def test_marsh(self, subplot=323):
+    def test_marsh(self, subplot=423):
 
         # load data from Marsh code
         folder = os.path.dirname(alpro.__file__)
@@ -135,7 +124,7 @@ class RunTest(unittest.TestCase):
             subplot=subplot,
             title="Libanov Field")
 
-    def test_fourier_single(self, subplot=324):
+    def test_fourier_single(self, subplot=424):
 
         # set up uniform modek
         s1 = alpro.Survival("uniform")
@@ -161,7 +150,7 @@ class RunTest(unittest.TestCase):
             title="Fourier Single",
             logy=True)
 
-    def test_fourier_massive(self, subplot=325):
+    def test_fourier_massive(self, subplot=425):
 
         # set up cell model with uniform cell sizes
         s1 = alpro.Survival("1275b")
@@ -193,7 +182,7 @@ class RunTest(unittest.TestCase):
             logy=True)
         # plt.ylim(1e-9,2)
 
-    def test_fourier_massless(self, subplot=326):
+    def test_fourier_massless(self, subplot=426):
 
         # set up cell model with uniform cell sizes
         s1 = alpro.Survival("1275b")
@@ -225,6 +214,71 @@ class RunTest(unittest.TestCase):
             title="Fourier Massless",
             logy=True)
         
+    def test_analytic_nalps(self, subplot=427):
+
+        # set up uniform modek
+        s = alpro.Survival("uniform", multi_alp=True)
+        s.setup_regular_model(B=B, L=L, ne=ne, N=1, phi=0.0)
+
+        # only one alps but multi alps formalism 
+        s.set_params(g=g, mass=mass)   # set up ALP parameters in eV^-1 and eV
+        # propagate the photon-ALP beam
+        P, _ = s.propagate(energies=energy_x, pol="y")
+
+        # get theoretical prediction
+        prediction = s.analytic_pga(energy_x)
+
+        # compare results
+        self.assertTrue(np.allclose(P, prediction))
+        self.make_plot(
+            energy_x,
+            prediction,
+            P,
+            subplot=subplot,
+            title="Multi ALPs Analytic (1 field)",
+            logy=True)
+        
+    def test_multi_v_single(self, subplot=428):
+
+        # set up cell models to test
+        s1 = alpro.Survival("1275a")
+        s1.init_model()
+        LMAX = 300.0
+        s1.domain.create_box_array(LMAX, 42, s1.coherence_func, r0=0)
+
+
+        s2 = alpro.Survival("1275a", multi_alp=True)
+        s2.init_model()
+        s2.domain.create_box_array(LMAX, 42, s2.coherence_func, r0=0)
+
+        energies = np.logspace(0, 8, 1000)
+
+        # only one alps but multi alps formalism 
+        masses = np.array([1e-12, 1e-12])
+        g1 = 1e-13 
+        g2 = 3e-13
+        couplings = np.array([g1, g2]) * 1e-9
+        s2.set_params(g = couplings, mass = masses)
+
+        s1.set_params(g=np.sqrt(g1*g1 + g2*g2) * 1e-9, mass=1e-12)
+
+
+        P1, _ = s1.propagate(energies=energies, pol="both")
+
+        # propagate the photon-ALP beam
+        P2, _ = s2.propagate(energies=energies, pol="both")
+
+
+        # compare results
+        self.assertTrue(np.allclose(P1, P2))
+        self.make_plot(
+            energies,
+            P1,
+            P2,
+            subplot=subplot,
+            title="Multi ALPs v single ALP",
+            logy=True)
+        
 
     def title_string(self):
         t = """ALPro version {}
@@ -233,10 +287,12 @@ class RunTest(unittest.TestCase):
         return (t)
 
     def test_save(self):
-        t = self.title_string()
-        plt.suptitle(t)
-        plt.gcf().set_size_inches(8, 11)
-        plt.savefig("Test_{}.png".format(date.today().strftime("%d-%m-%Y")))
+        if save_plot:
+            t = self.title_string()
+            plt.suptitle(t)
+            plt.gcf().set_size_inches(8, 12)
+            plt.tight_layout(pad=0.1)
+            plt.savefig("Test_{}.png".format(date.today().strftime("%d-%m-%Y")))
 
 
     @given(alp_params, domain_params)
@@ -253,8 +309,23 @@ class RunTest(unittest.TestCase):
         assert np.all(P >= -1e-10)
         assert np.all(P <= 1 + 1e-10)
 
+    @given(alp_params, domain_params)
+    @settings(max_examples=200)
+    def test_nalps_probability_is_physical(self, alp, domain):
+        s = alpro.Survival("uniform", multi_alp=True)
+        s.set_params(g=alp["g"], mass=alp["mass"])
+        s.setup_regular_model(**domain, phi=0.0)
+
+        energies = np.logspace(3, 7, 50)
+        P, _ = s.propagate(energies=energies, pol="both")
+
+        assert np.all(np.isfinite(P))
+        assert np.all(P >= -1e-10)
+        assert np.all(P <= 1 + 1e-10)
+
 
 
 
 if __name__ == '__main__':
+    
     unittest.main()

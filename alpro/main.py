@@ -167,7 +167,7 @@ class Survival:
         else:
             return (P)
 
-    def set_params(self, g=1e-13 * 1e-9, mass=1e-13, invgev=False, force_nalps=False):
+    def set_params(self, g=1e-13 * 1e-9, mass=1e-13, invgev=False):
         '''
         Set the ALP coupling constant(s) and mass(es) for the calculation. 
         If multiple values are supplied, then the calculation will be done 
